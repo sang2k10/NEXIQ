@@ -436,9 +436,10 @@ fun SettingsScreen(
 
             NexiqSettingRow(
                 title = "How NEXIQ Works",
-                subtitle = "30-second quick guide on screen translation",
+                subtitle = "See how screen translation works in 30 seconds",
+                trailingText = "Watch guide →",
+                trailingTextColor = BrandSecondary,
                 leadingIcon = Icons.AutoMirrored.Filled.HelpOutline,
-                showChevron = true,
                 onClick = { showVideoGuideDialog = true }
             )
             NexiqDivider()
@@ -600,8 +601,8 @@ private fun BubbleColorThemePicker(
     onSelectTheme: (String) -> Unit
 ) {
     val themes = listOf(
-        ThemeItem("cyan", "Azure", Color(0xFF0284C7), Color(0xFF38BDF8)),
-        ThemeItem("dark", "Obsidian", Color(0xFF1E293B), Color(0xFF64748B)),
+        ThemeItem("cyan", "Cyan", Color(0xFF00A8E8), Color(0xFF80D6FF)),
+        ThemeItem("dark", "Dark", Color(0xFF111B25), Color(0xFF283E54)),
         ThemeItem("pearl", "Pearl", Color(0xFFF8FAFC), Color(0xFFCBD5E1)),
         ThemeItem("indigo", "Indigo", Color(0xFF4F46E5), Color(0xFF818CF8))
     )
@@ -686,7 +687,7 @@ private fun BubbleIconStylePicker(
     onSelectIconStyle: (String) -> Unit
 ) {
     val styles = listOf(
-        IconStyleItem("brand", "Viewframe N", R.drawable.ic_bubble_translate),
+        IconStyleItem("brand", "Brand Mark", R.drawable.ic_bubble_translate),
         IconStyleItem("lens", "Minimal Lens", R.drawable.ic_bubble_lens),
         IconStyleItem("glyph", "Text Glyph", R.drawable.ic_bubble_glyph),
         IconStyleItem("aperture", "Aperture", R.drawable.ic_bubble_aperture)
@@ -792,11 +793,11 @@ private fun DemoVideoGuideDialog(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = BrandPrimaryContainer,
+                        color = BrandSecondaryContainer,
                         modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = BrandSecondary, modifier = Modifier.size(20.dp))
                         }
                     }
                     Column {
@@ -822,7 +823,7 @@ private fun DemoVideoGuideDialog(
                             Icon(
                                 Icons.Default.PlayArrow,
                                 contentDescription = "Play Video",
-                                tint = BrandPrimary,
+                                tint = BrandSecondary,
                                 modifier = Modifier.size(40.dp)
                             )
                             Text(
@@ -864,9 +865,9 @@ private fun GuideStepRow(step: String, title: String, description: String) {
             modifier = Modifier
                 .size(20.dp)
                 .clip(CircleShape)
-                .background(BrandPrimaryContainer)
+                .background(BrandSecondaryContainer)
         ) {
-            Text(step, color = BrandPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text(step, color = BrandSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
         Column {
             Text(title, style = MaterialTheme.typography.titleSmall, color = TextPrimary, fontSize = 13.sp)
@@ -937,6 +938,13 @@ private fun OnboardingPrivacyDialog(
                 }
 
                 NexiqDivider()
+
+                Text(
+                    text = "HOW IT WORKS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary,
+                    fontWeight = FontWeight.SemiBold
+                )
 
                 // Key Features (Typographic hierarchy, not cards)
                 Column(verticalArrangement = Arrangement.spacedBy(NexiqSpacing.md)) {

@@ -10,11 +10,13 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkNexiqColors.brandPrimary,
-    onPrimary = Color(0xFF090D14),
+    onPrimary = Color(0xFF0B121A),
     primaryContainer = DarkNexiqColors.brandPrimaryContainer,
     onPrimaryContainer = DarkNexiqColors.brandPrimaryOnContainer,
-    secondary = DarkNexiqColors.brandPrimary,
-    onSecondary = DarkNexiqColors.surfaceBase,
+    secondary = DarkNexiqColors.brandSecondary,
+    onSecondary = Color(0xFF0B121A),
+    secondaryContainer = DarkNexiqColors.brandSecondaryContainer,
+    onSecondaryContainer = DarkNexiqColors.brandSecondaryOnContainer,
     background = DarkNexiqColors.surfaceBase,
     onBackground = DarkNexiqColors.textPrimary,
     surface = DarkNexiqColors.surfaceContainer,
@@ -31,11 +33,13 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = LightNexiqColors.brandPrimary,
-    onPrimary = LightNexiqColors.surfaceContainer,
+    onPrimary = Color.White,
     primaryContainer = LightNexiqColors.brandPrimaryContainer,
     onPrimaryContainer = LightNexiqColors.brandPrimaryOnContainer,
-    secondary = LightNexiqColors.brandPrimary,
-    onSecondary = LightNexiqColors.surfaceContainer,
+    secondary = LightNexiqColors.brandSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = LightNexiqColors.brandSecondaryContainer,
+    onSecondaryContainer = LightNexiqColors.brandSecondaryOnContainer,
     background = LightNexiqColors.surfaceBase,
     onBackground = LightNexiqColors.textPrimary,
     surface = LightNexiqColors.surfaceContainer,

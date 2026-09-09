@@ -2,14 +2,12 @@ package com.screentranslator.presentation.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -52,6 +50,7 @@ fun NexiqSettingRow(
     subtitle: String? = null,
     leadingIcon: ImageVector? = null,
     trailingText: String? = null,
+    trailingTextColor: Color = TextSecondary,
     showChevron: Boolean = false,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -78,9 +77,7 @@ fun NexiqSettingRow(
                 imageVector = leadingIcon,
                 contentDescription = null,
                 tint = TextTertiary,
-                modifier = Modifier
-                    .size(20.dp)
-                    .padding(end = 0.dp)
+                modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(NexiqSpacing.md))
         }
@@ -106,8 +103,9 @@ fun NexiqSettingRow(
             Text(
                 text = trailingText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
-                fontSize = 13.sp
+                color = trailingTextColor,
+                fontSize = 13.sp,
+                fontWeight = if (trailingTextColor != TextSecondary) FontWeight.Medium else FontWeight.Normal
             )
         }
 
@@ -246,7 +244,8 @@ fun NexiqSliderRow(
 
 /**
  * Informative system status banner.
- * Calm and technical; does not stack green-on-green boxes.
+ * Calm, technical, and restrained. Avoids stacking green-on-green boxes.
+ * Uses neutral surface with one strong status signal (✓ Active).
  */
 @Composable
 fun NexiqStatusBanner(
@@ -259,8 +258,8 @@ fun NexiqStatusBanner(
 ) {
     Surface(
         shape = ContainerShape,
-        color = if (isActive) SuccessGreenContainer else SurfaceElevated,
-        border = BorderStroke(1.dp, if (isActive) SuccessGreen.copy(alpha = 0.35f) else BorderSubtle),
+        color = SurfaceElevated,
+        border = BorderStroke(1.dp, BorderSubtle),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(NexiqSpacing.lg)) {
@@ -271,7 +270,7 @@ fun NexiqStatusBanner(
                 // Single clear status dot / indicator
                 Box(
                     modifier = Modifier
-                        .size(10.dp)
+                        .size(8.dp)
                         .clip(CircleShape)
                         .background(if (isActive) SuccessGreen else TextTertiary)
                 )
@@ -285,7 +284,7 @@ fun NexiqStatusBanner(
                 )
 
                 Text(
-                    text = if (isActive) "Active" else "Disabled",
+                    text = if (isActive) "✓ Active" else "Inactive",
                     style = MaterialTheme.typography.labelMedium,
                     color = if (isActive) SuccessGreen else TextTertiary,
                     fontWeight = FontWeight.SemiBold
@@ -298,7 +297,7 @@ fun NexiqStatusBanner(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
-                modifier = Modifier.padding(start = NexiqSpacing.lg + 2.dp)
+                modifier = Modifier.padding(start = NexiqSpacing.lg)
             )
 
             if (!isActive && actionText != null && onActionClick != null) {
@@ -310,7 +309,7 @@ fun NexiqStatusBanner(
                     contentPadding = PaddingValues(horizontal = NexiqSpacing.md, vertical = NexiqSpacing.sm),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = NexiqSpacing.lg + 2.dp)
+                        .padding(start = NexiqSpacing.lg)
                 ) {
                     Text(
                         text = actionText,

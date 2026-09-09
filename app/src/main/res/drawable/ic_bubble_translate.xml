@@ -5,80 +5,107 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- NEXIQ Viewframe 'N' Brand Mark (Light & Bubble) -->
-    <!-- Viewport framing guides -->
+    <!--
+        NEXIQ Small UI Mark & Bubble Icon (24x24 Viewport)
+        Concept: N + Q (Magnifying Glass) + [イ (White) + I (Orange #FF6B4A)] + 4 Viewfinder Corners
+    -->
+
+    <!-- 1. Four Viewfinder Corner Brackets (Cyan #00A8E8 at 50% alpha, framing only) -->
+    <!-- Top-Left -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeAlpha="0.30"
+        android:strokeColor="#00A8E8"
+        android:strokeAlpha="0.50"
         android:strokeWidth="1.2"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M 3,6 V 3.5 C 3,3.2 3.2,3 3.5,3 H 6" />
+        android:pathData="M 2.5,5.5 V 3.5 C 2.5,2.9 2.9,2.5 3.5,2.5 H 5.5" />
 
+    <!-- Top-Right -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeAlpha="0.30"
+        android:strokeColor="#00A8E8"
+        android:strokeAlpha="0.50"
         android:strokeWidth="1.2"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M 18,3 H 20.5 C 20.8,3 21,3.2 21,3.5 V 6" />
+        android:pathData="M 18.5,2.5 H 20.5 C 21.1,2.5 21.5,2.9 21.5,3.5 V 5.5" />
 
+    <!-- Bottom-Left -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeAlpha="0.30"
+        android:strokeColor="#00A8E8"
+        android:strokeAlpha="0.50"
         android:strokeWidth="1.2"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M 3,18 V 20.5 C 3,20.8 3.2,21 3.5,21 H 6" />
+        android:pathData="M 2.5,18.5 V 20.5 C 2.5,21.1 2.9,21.5 3.5,21.5 H 5.5" />
 
+    <!-- Bottom-Right -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeAlpha="0.30"
+        android:strokeColor="#00A8E8"
+        android:strokeAlpha="0.50"
         android:strokeWidth="1.2"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M 18,21 H 20.5 C 20.8,21 21,20.8 21,20.5 V 18" />
+        android:pathData="M 18.5,21.5 H 20.5 C 21.1,21.5 21.5,21.1 21.5,20.5 V 18.5" />
 
-    <!-- Diagonal Traverse (Precision Azure #38BDF8) -->
+    <!-- 2. Letter 'N' (Cyan #00A8E8) -->
     <path
-        android:fillColor="#38BDF8"
-        android:pathData="M 5.8,4.2
-                         C 6.4,3.7 7.2,3.9 7.7,4.5
-                         L 18.2,19.5
-                         C 18.7,20.1 18.5,20.9 17.9,21.4
-                         C 17.3,21.9 16.5,21.7 16,21.1
-                         L 5.5,6.1
-                         C 5,5.5 5.2,4.7 5.8,4.2 Z" />
+        android:strokeColor="#00A8E8"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 5.5,18.0 V 6.0 L 10.5,18.0 V 6.0" />
 
-    <!-- Left Screen Upright (#FFFFFF) -->
+    <!-- 3. Letter 'Q' as Integrated Magnifying Glass (Cyan #00A8E8) -->
+    <!-- Lens Rim (Center 15.5, 11.5, Radius 4.0, strokeWidth 1.3) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M 5,3
-                         C 5.8,3 6.4,3.6 6.4,4.4
-                         V 19.6
-                         C 6.4,20.4 5.8,21 5,21
-                         C 4.2,21 3.6,20.4 3.6,19.6
-                         V 4.4
-                         C 3.6,3.6 4.2,3 5,3 Z" />
+        android:strokeColor="#00A8E8"
+        android:strokeWidth="1.3"
+        android:pathData="M 15.5,7.5 A 4.0,4.0 0 1,1 15.49,7.5 Z" />
 
-    <!-- Right Screen Upright (#FFFFFF) -->
+    <!-- Optical Lens Tint (Deep Slate #111B25) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M 19,3
-                         C 19.8,3 20.4,3.6 20.4,4.4
-                         V 19.6
-                         C 20.4,20.4 19.8,21 19,21
-                         C 18.2,21 17.6,20.4 17.6,19.6
-                         V 4.4
-                         C 17.6,3.6 18.2,3 19,3 Z" />
+        android:fillColor="#111B25"
+        android:pathData="M 15.5,8.1 A 3.4,3.4 0 1,1 15.49,8.1 Z" />
 
-    <!-- Optical Focus Center Point (#38BDF8) -->
+    <!-- Q Tail / Magnifying Glass Handle -->
     <path
-        android:fillColor="#38BDF8"
-        android:pathData="M 12,11.2
-                         C 12.6,11.2 13,11.6 13,12.2
-                         C 13,12.8 12.6,13.2 12,13.2
-                         C 11.4,13.2 11,12.8 11,12.2
-                         C 11,11.6 11.4,11.2 12,11.2 Z" />
+        android:strokeColor="#00A8E8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M 18.3,14.3 L 20.8,17.2" />
+
+    <!-- 4. Inside the Lens: The Translation Overlay Relationship -->
+    <!-- Katakana 'イ' (Source layer, White #F5F7F8, visually primary) -->
+    <path
+        android:strokeColor="#F5F7F8"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 15.1,9.8 C 14.4,10.7 13.7,11.5 13.0,12.2" />
+    <path
+        android:strokeColor="#F5F7F8"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:pathData="M 14.4,11.0 V 13.6" />
+
+    <!-- Latin 'I' (Translated overlay, Translation Orange #FF6B4A, smaller, overlaid/coexisting) -->
+    <!-- Serif top -->
+    <path
+        android:strokeColor="#FF6B4A"
+        android:strokeWidth="0.7"
+        android:strokeLineCap="round"
+        android:pathData="M 16.0,11.5 H 17.6" />
+    <!-- Stem -->
+    <path
+        android:strokeColor="#FF6B4A"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:pathData="M 16.8,11.5 V 13.6" />
+    <!-- Serif bottom -->
+    <path
+        android:strokeColor="#FF6B4A"
+        android:strokeWidth="0.7"
+        android:strokeLineCap="round"
+        android:pathData="M 16.0,13.6 H 17.6" />
 
 </vector>
