@@ -15,7 +15,12 @@ data class AppSettings(
     val rememberLastLanguagePair: Boolean = true,
     val autoStartTranslation: Boolean = true,
     val saveHistory: Boolean = false,
-    val floatingButtonEnabled: Boolean = false
+    val floatingButtonEnabled: Boolean = false,
+    val bubbleTheme: String = "cyan",
+    val bubbleSizeDp: Int = 52,
+    val bubbleIconStyle: String = "brand",
+    val themeMode: String = "system",
+    val hasAcceptedOnboarding: Boolean = false
 ) {
     val defaultSourceLanguage: Language get() = Language.fromCode(defaultSourceLanguageCode)
     val defaultTargetLanguage: Language get() = Language.fromCode(defaultTargetLanguageCode)

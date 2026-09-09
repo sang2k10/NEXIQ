@@ -94,6 +94,36 @@ class SettingsViewModel(
         }
     }
 
+    fun setBubbleTheme(theme: String) {
+        viewModelScope.launch {
+            settingsRepository.updateSettings { it.copy(bubbleTheme = theme) }
+        }
+    }
+
+    fun setBubbleSize(sizeDp: Int) {
+        viewModelScope.launch {
+            settingsRepository.updateSettings { it.copy(bubbleSizeDp = sizeDp) }
+        }
+    }
+
+    fun setBubbleIconStyle(style: String) {
+        viewModelScope.launch {
+            settingsRepository.updateSettings { it.copy(bubbleIconStyle = style) }
+        }
+    }
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            settingsRepository.updateSettings { it.copy(themeMode = mode) }
+        }
+    }
+
+    fun setHasAcceptedOnboarding(accepted: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateSettings { it.copy(hasAcceptedOnboarding = accepted) }
+        }
+    }
+
     companion object {
         fun provideFactory(settingsRepository: SettingsRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {

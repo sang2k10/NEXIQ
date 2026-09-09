@@ -10,11 +10,15 @@ import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.screentranslator.core.util.ImageOcrEnhancer
 import com.screentranslator.domain.engine.OcrEngine
+import com.screentranslator.domain.engine.TextParagraphClusterer
 import com.screentranslator.domain.model.BoundingBox
 import com.screentranslator.domain.model.Language
 import com.screentranslator.domain.model.OcrBlock
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
@@ -55,31 +59,106 @@ class MlKitOcrEngine : OcrEngine {
                 return@withContext Result.failure(IllegalStateException("Bitmap is already recycled"))
             }
 
-            val inputImage = InputImage.fromBitmap(bitmap, 0)
-            val recognizer = selectRecognizer(preferredLanguage)
+            // 1. Auto-upscale small regions/crops so character glyphs exceed ML Kit's 24x24px threshold
+            val (scaledBitmap, scaleFactor) = ImageOcrEnhancer.upscaleIfNeeded(bitmap, minDimension = 400)
+            val isScaled = scaledBitmap != bitmap
 
-            val visionText = processImage(recognizer, inputImage)
-            val blocks = convertToDomainBlocks(visionText, preferredLanguage?.code)
+            try {
+                // Pass 1: Primary recognition pass
+                var blocks = executeRecognitionPass(scaledBitmap, preferredLanguage, scaleFactor)
 
-            // If auto-detect was requested and latin recognizer found very little text,
-            // try Japanese as a fallback for East Asian scripts
-            if (blocks.isEmpty() && (preferredLanguage == null || preferredLanguage.isAutoDetect)) {
-                val jpnText = processImage(japaneseRecognizer, inputImage)
-                val jpnBlocks = convertToDomainBlocks(jpnText, "ja")
-                if (jpnBlocks.isNotEmpty()) {
-                    return@withContext Result.success(jpnBlocks)
+                // Pass 2: If primary pass detected 0 blocks, run contrast-enhanced pass (rescues video subtitles)
+                if (blocks.isEmpty()) {
+                    val contrastBitmap = ImageOcrEnhancer.enhanceContrast(scaledBitmap)
+                    if (contrastBitmap != null) {
+                        try {
+                            blocks = executeRecognitionPass(contrastBitmap, preferredLanguage, scaleFactor)
+                        } finally {
+                            if (!contrastBitmap.isRecycled) {
+                                contrastBitmap.recycle()
+                            }
+                        }
+                    }
                 }
 
-                val chnText = processImage(chineseRecognizer, inputImage)
-                val chnBlocks = convertToDomainBlocks(chnText, "zh")
-                if (chnBlocks.isNotEmpty()) {
-                    return@withContext Result.success(chnBlocks)
+                Result.success(blocks)
+            } finally {
+                if (isScaled && !scaledBitmap.isRecycled) {
+                    scaledBitmap.recycle()
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun executeRecognitionPass(
+        targetBitmap: Bitmap,
+        preferredLanguage: Language?,
+        scaleFactor: Float
+    ): List<OcrBlock> = coroutineScope {
+        val inputImage = InputImage.fromBitmap(targetBitmap, 0)
+
+        if (preferredLanguage == null || preferredLanguage.isAutoDetect) {
+            // Concurrently run Chinese and Latin recognizers.
+            // ML Kit Chinese recognizer accurately detects both Hanzi and Latin/digits.
+            val chnDeferred = async {
+                try {
+                    val text = processImage(chineseRecognizer, inputImage)
+                    convertToDomainBlocks(text, "zh", scaleFactor)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+            }
+            val latinDeferred = async {
+                try {
+                    val text = processImage(latinRecognizer, inputImage)
+                    convertToDomainBlocks(text, "en", scaleFactor)
+                } catch (_: Exception) {
+                    emptyList()
                 }
             }
 
-            Result.success(blocks)
-        } catch (e: Exception) {
-            Result.failure(e)
+            val chnBlocks = chnDeferred.await()
+            val latinBlocks = latinDeferred.await()
+
+            // Count authentic CJK ideographs
+            val cjkCharCount = chnBlocks.sumOf { block: OcrBlock ->
+                block.text.count { c: Char ->
+                    c in '\u4E00'..'\u9FFF' || c in '\u3040'..'\u30FF' || c in '\uAC00'..'\uD7AF'
+                }
+            }
+
+            if (cjkCharCount > 0) {
+                return@coroutineScope chnBlocks
+            }
+
+            // If no CJK found, prefer the recognizer that detected more substantial content
+            val bestBlocks = if (chnBlocks.size > latinBlocks.size && chnBlocks.any { it.text.length > 1 }) {
+                chnBlocks
+            } else {
+                latinBlocks
+            }
+
+            if (bestBlocks.isNotEmpty()) {
+                return@coroutineScope bestBlocks
+            }
+
+            // Fallback: Check Japanese specific kana if both returned empty
+            val jpnText = try { processImage(japaneseRecognizer, inputImage) } catch (_: Exception) { null }
+            if (jpnText != null) {
+                val jpnBlocks = convertToDomainBlocks(jpnText, "ja", scaleFactor)
+                if (jpnBlocks.isNotEmpty()) {
+                    return@coroutineScope jpnBlocks
+                }
+            }
+
+            emptyList()
+        } else {
+            // Explicit language requested
+            val recognizer = selectRecognizer(preferredLanguage)
+            val visionText = processImage(recognizer, inputImage)
+            convertToDomainBlocks(visionText, preferredLanguage.code, scaleFactor)
         }
     }
 
@@ -121,32 +200,87 @@ class MlKitOcrEngine : OcrEngine {
             }
     }
 
+    /**
+     * Converts ML Kit vision text to domain OCR blocks.
+     * Extracts text at Line granularity so multi-line text (subtitles, titles, buttons)
+     * is accurately segmented with tight bounding boxes instead of being merged into giant slabs.
+     */
     private fun convertToDomainBlocks(
         visionText: Text,
-        detectedLangCode: String?
+        detectedLangCode: String?,
+        scaleFactor: Float = 1.0f
     ): List<OcrBlock> {
         val domainBlocks = mutableListOf<OcrBlock>()
 
         for (block in visionText.textBlocks) {
-            val rect = block.boundingBox ?: continue
-            val boundingBox = BoundingBox.fromRect(rect)
+            if (block.lines.isNotEmpty()) {
+                val lineBlocks = mutableListOf<OcrBlock>()
+                for (line in block.lines) {
+                    val rect = line.boundingBox ?: continue
+                    val text = line.text.trim()
+                    if (text.isEmpty()) continue
 
-            // Reject zero-size blocks
-            if (boundingBox.width <= 0f || boundingBox.height <= 0f) continue
+                    val boundingBox = if (scaleFactor != 1.0f && scaleFactor > 0f) {
+                        BoundingBox(
+                            left = rect.left / scaleFactor,
+                            top = rect.top / scaleFactor,
+                            right = rect.right / scaleFactor,
+                            bottom = rect.bottom / scaleFactor
+                        )
+                    } else {
+                        BoundingBox.fromRect(rect)
+                    }
 
-            // Determine script language code if not passed
-            val langCode = detectedLangCode
-                ?: block.recognizedLanguage
-                ?: detectScriptLanguage(block.text)
+                    if (boundingBox.width <= 0f || boundingBox.height <= 0f) continue
 
-            domainBlocks.add(
-                OcrBlock(
-                    text = block.text.trim(),
-                    boundingBox = boundingBox,
-                    confidence = 1.0f,
-                    detectedLanguageCode = langCode
+                    val langCode = detectedLangCode
+                        ?: line.recognizedLanguage
+                        ?: detectScriptLanguage(text)
+
+                    lineBlocks.add(
+                        OcrBlock(
+                            text = text,
+                            boundingBox = boundingBox,
+                            confidence = 1.0f,
+                            detectedLanguageCode = langCode
+                        )
+                    )
+                }
+
+                // Intelligently cluster lines into coherent paragraphs or isolated UI blocks
+                val clustered = TextParagraphClusterer.clusterLines(lineBlocks)
+                domainBlocks.addAll(clustered)
+            } else {
+                val rect = block.boundingBox ?: continue
+                val text = block.text.trim()
+                if (text.isEmpty()) continue
+
+                val boundingBox = if (scaleFactor != 1.0f && scaleFactor > 0f) {
+                    BoundingBox(
+                        left = rect.left / scaleFactor,
+                        top = rect.top / scaleFactor,
+                        right = rect.right / scaleFactor,
+                        bottom = rect.bottom / scaleFactor
+                    )
+                } else {
+                    BoundingBox.fromRect(rect)
+                }
+
+                if (boundingBox.width <= 0f || boundingBox.height <= 0f) continue
+
+                val langCode = detectedLangCode
+                    ?: block.recognizedLanguage
+                    ?: detectScriptLanguage(text)
+
+                domainBlocks.add(
+                    OcrBlock(
+                        text = text,
+                        boundingBox = boundingBox,
+                        confidence = 1.0f,
+                        detectedLanguageCode = langCode
+                    )
                 )
-            )
+            }
         }
 
         return domainBlocks
@@ -169,3 +303,4 @@ class MlKitOcrEngine : OcrEngine {
         }
     }
 }
+

@@ -51,3 +51,13 @@
   2. **Persistent Notification Action**: Notification with "Translate Screen" action when service is active.
   3. **Floating Overlay Shortcut Button** (optional user preference): A draggable floating icon on screen edge.
   4. **App Shortcuts & Launcher Shortcut**: Directly triggers capture upon launch.
+
+## ADR-007: Product Design System, Visual Hierarchy & Adaptive Brand Icon
+- **Context**: The early prototype suffered from heavy dark navy backgrounds, electric cyan color overload, giant outlined cards, misaligned left-shifted dropdowns, and an unbranded generic icon.
+- **Decision**:
+  1. Transition the palette to a curated Material 3 Deep Slate (`#0B0F17` surface base, `#151D2A` container, `#1E293B` cards) with restrained `#0284C7` Azure accents and WCAG AA contrast.
+  2. Replace dropdowns with clean modal selection dialogs to prevent misalignment and edge clippings.
+  3. Create an ownable brand symbol: a dual-lens transformation glyph with screen corner brackets, deployed consistently across adaptive launcher icon (with monochrome support), quick settings tile, floating bubble, and settings top bar.
+  4. Curate 4 deliberate bubble themes: Brand Azure, Obsidian Dark, Pearl Light (with auto-inverted dark glyph), and Indigo Royale.
+  5. Refactor status communication to be quiet, reassuring, and non-alarmist.
+

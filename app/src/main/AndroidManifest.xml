@@ -35,6 +35,9 @@
             android:name=".presentation.permission.CapturePermissionActivity"
             android:excludeFromRecents="true"
             android:exported="false"
+            android:taskAffinity=""
+            android:noHistory="true"
+            android:launchMode="singleInstance"
             android:theme="@style/Theme.ScreenTranslator.Transparent" />
 
         <!-- Foreground Service for Screen Capture & Session Management -->
@@ -53,6 +56,19 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
+        </service>
+
+        <!-- Accessibility Service for Instant Static Screenshots (Zero Recording Prompts) -->
+        <service
+            android:name=".service.ScreenTranslatorAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
 
     </application>

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.screentranslator.domain.model.AppSettings
@@ -36,6 +37,11 @@ class SettingsRepositoryImpl(
         val AUTO_START_TRANSLATION = booleanPreferencesKey("auto_start_translation")
         val SAVE_HISTORY = booleanPreferencesKey("save_history")
         val FLOATING_BUTTON_ENABLED = booleanPreferencesKey("floating_button_enabled")
+        val BUBBLE_THEME = stringPreferencesKey("bubble_theme")
+        val BUBBLE_SIZE_DP = intPreferencesKey("bubble_size_dp")
+        val BUBBLE_ICON_STYLE = stringPreferencesKey("bubble_icon_style")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val HAS_ACCEPTED_ONBOARDING = booleanPreferencesKey("has_accepted_onboarding")
     }
 
     override val settingsFlow: Flow<AppSettings> = context.dataStore.data
@@ -71,6 +77,11 @@ class SettingsRepositoryImpl(
             preferences[PreferencesKeys.AUTO_START_TRANSLATION] = updated.autoStartTranslation
             preferences[PreferencesKeys.SAVE_HISTORY] = updated.saveHistory
             preferences[PreferencesKeys.FLOATING_BUTTON_ENABLED] = updated.floatingButtonEnabled
+            preferences[PreferencesKeys.BUBBLE_THEME] = updated.bubbleTheme
+            preferences[PreferencesKeys.BUBBLE_SIZE_DP] = updated.bubbleSizeDp
+            preferences[PreferencesKeys.BUBBLE_ICON_STYLE] = updated.bubbleIconStyle
+            preferences[PreferencesKeys.THEME_MODE] = updated.themeMode
+            preferences[PreferencesKeys.HAS_ACCEPTED_ONBOARDING] = updated.hasAcceptedOnboarding
         }
     }
 
@@ -87,7 +98,12 @@ class SettingsRepositoryImpl(
             rememberLastLanguagePair = preferences[PreferencesKeys.REMEMBER_LAST_PAIR] ?: true,
             autoStartTranslation = preferences[PreferencesKeys.AUTO_START_TRANSLATION] ?: true,
             saveHistory = preferences[PreferencesKeys.SAVE_HISTORY] ?: false,
-            floatingButtonEnabled = preferences[PreferencesKeys.FLOATING_BUTTON_ENABLED] ?: false
+            floatingButtonEnabled = preferences[PreferencesKeys.FLOATING_BUTTON_ENABLED] ?: false,
+            bubbleTheme = preferences[PreferencesKeys.BUBBLE_THEME] ?: "cyan",
+            bubbleSizeDp = preferences[PreferencesKeys.BUBBLE_SIZE_DP] ?: 52,
+            bubbleIconStyle = preferences[PreferencesKeys.BUBBLE_ICON_STYLE] ?: "brand",
+            themeMode = preferences[PreferencesKeys.THEME_MODE] ?: "system",
+            hasAcceptedOnboarding = preferences[PreferencesKeys.HAS_ACCEPTED_ONBOARDING] ?: false
         )
     }
 }

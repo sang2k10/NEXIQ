@@ -1,7 +1,8 @@
 <resources>
     <style name="Theme.ScreenTranslator" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#0F172A</item>
-        <item name="android:windowBackground">#0F172A</item>
+        <item name="android:statusBarColor">#0B0F17</item>
+        <item name="android:navigationBarColor">#0B0F17</item>
+        <item name="android:windowBackground">#0B0F17</item>
     </style>
 
     <style name="Theme.ScreenTranslator.Transparent" parent="android:Theme.Translucent.NoTitleBar">

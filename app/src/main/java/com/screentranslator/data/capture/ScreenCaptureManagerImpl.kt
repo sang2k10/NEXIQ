@@ -12,10 +12,11 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import com.screentranslator.domain.capture.ScreenCaptureManager
+import com.screentranslator.service.ScreenTranslatorAccessibilityService
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,40 +31,73 @@ class ScreenCaptureManagerImpl(
         context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
     private val windowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Dedicated background handler thread so screen capture never touches the Main UI thread
+    private var workerThread: HandlerThread? = null
+    private var workerHandler: Handler? = null
+
+    private var activeMediaProjection: MediaProjection? = null
+    private var activeVirtualDisplay: VirtualDisplay? = null
+    private var activeImageReader: ImageReader? = null
+    private var currentWidth: Int = 0
+    private var currentHeight: Int = 0
+
+    private fun getWorkerHandler(): Handler {
+        val existingHandler = workerHandler
+        if (existingHandler != null && workerThread?.isAlive == true) {
+            return existingHandler
+        }
+        val thread = HandlerThread("ScreenCaptureWorkerThread").apply { start() }
+        workerThread = thread
+        val handler = Handler(thread.looper)
+        workerHandler = handler
+        return handler
+    }
+
+    override fun hasActiveProjection(): Boolean {
+        // If Accessibility Service is running, we always have instant zero-prompt static screenshot ready!
+        return ScreenTranslatorAccessibilityService.isRunning()
+    }
 
     override suspend fun captureScreen(resultCode: Int, resultData: Intent): Result<Bitmap> =
         withContext(Dispatchers.Default) {
-            var mediaProjection: MediaProjection? = null
-            var virtualDisplay: VirtualDisplay? = null
-            var imageReader: ImageReader? = null
+            // Priority 1: If Accessibility Service is active, use instant hardware screenshot!
+            if (ScreenTranslatorAccessibilityService.isRunning()) {
+                val accResult = ScreenTranslatorAccessibilityService.captureScreenshot()
+                if (accResult.isSuccess) {
+                    return@withContext accResult
+                }
+            }
 
             try {
-                // 1. Calculate accurate screen metrics
+                // Stop any previous stale projection
+                stopProjection()
+
                 val (width, height, densityDpi) = getScreenDimensions()
+                currentWidth = width
+                currentHeight = height
 
-                // 2. Initialize ImageReader for frame capture
-                imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+                val handler = getWorkerHandler()
+                val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
+                activeImageReader = imageReader
 
-                // 3. Acquire MediaProjection
-                mediaProjection = projectionManager.getMediaProjection(resultCode, resultData)
+                val mediaProjection = projectionManager.getMediaProjection(resultCode, resultData)
                     ?: return@withContext Result.failure(IllegalStateException("Failed to obtain MediaProjection instance"))
+                activeMediaProjection = mediaProjection
 
-                // Mandatory callback for Android 14+ (API 34) compliance
                 mediaProjection.registerCallback(object : MediaProjection.Callback() {
                     override fun onStop() {
                         super.onStop()
+                        stopProjection()
                     }
-                }, mainHandler)
+                }, handler)
 
                 val deferredBitmap = CompletableDeferred<Bitmap>()
 
                 imageReader.setOnImageAvailableListener({ reader ->
-                    if (deferredBitmap.isCompleted) return@setOnImageAvailableListener
-
                     val image = try {
                         reader.acquireLatestImage()
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
 
@@ -79,12 +113,13 @@ class ScreenCaptureManagerImpl(
                             }
                         } finally {
                             image.close()
+                            // Immediately remove listener so we don't continuously process frames
+                            reader.setOnImageAvailableListener(null, null)
                         }
                     }
-                }, mainHandler)
+                }, handler)
 
-                // 4. Create VirtualDisplay mirroring the screen into ImageReader
-                virtualDisplay = mediaProjection.createVirtualDisplay(
+                val virtualDisplay = mediaProjection.createVirtualDisplay(
                     VIRTUAL_DISPLAY_NAME,
                     width,
                     height,
@@ -92,13 +127,17 @@ class ScreenCaptureManagerImpl(
                     DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                     imageReader.surface,
                     null,
-                    mainHandler
+                    handler
                 )
+                activeVirtualDisplay = virtualDisplay
 
-                // 5. Wait for frame with timeout (1500ms max)
                 val bitmap = withTimeoutOrNull(1500L) {
                     deferredBitmap.await()
                 }
+
+                // ALWAYS stop projection immediately after single frame capture!
+                // This ensures the system screen-recording indicator at the top of the screen disappears immediately.
+                stopProjection()
 
                 if (bitmap != null) {
                     Result.success(bitmap)
@@ -106,14 +145,46 @@ class ScreenCaptureManagerImpl(
                     Result.failure(IllegalStateException("Screen capture timed out waiting for display frame"))
                 }
             } catch (e: Exception) {
+                stopProjection()
                 Result.failure(e)
-            } finally {
-                // Tear down virtual display and media projection immediately to release hardware resources
-                virtualDisplay?.release()
-                mediaProjection?.stop()
-                imageReader?.close()
             }
         }
+
+    override suspend fun captureFromActiveProjection(): Result<Bitmap> =
+        withContext(Dispatchers.Default) {
+            // If Accessibility Service is running, capture directly without touching MediaProjection
+            if (ScreenTranslatorAccessibilityService.isRunning()) {
+                val accResult = ScreenTranslatorAccessibilityService.captureScreenshot()
+                if (accResult.isSuccess) {
+                    return@withContext accResult
+                }
+            }
+
+            Result.failure(IllegalStateException("No active screenshot session available"))
+        }
+
+    override fun stopProjection() {
+        try {
+            activeVirtualDisplay?.release()
+        } catch (_: Exception) {}
+        activeVirtualDisplay = null
+
+        try {
+            activeMediaProjection?.stop()
+        } catch (_: Exception) {}
+        activeMediaProjection = null
+
+        try {
+            activeImageReader?.close()
+        } catch (_: Exception) {}
+        activeImageReader = null
+
+        try {
+            workerThread?.quitSafely()
+        } catch (_: Exception) {}
+        workerThread = null
+        workerHandler = null
+    }
 
     private fun getScreenDimensions(): Triple<Int, Int, Int> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -142,7 +213,6 @@ class ScreenCaptureManagerImpl(
         val rawBitmap = Bitmap.createBitmap(bitmapWidth, height, Bitmap.Config.ARGB_8888)
         rawBitmap.copyPixelsFromBuffer(buffer)
 
-        // If row padding was present, crop to exact display dimensions
         return if (rowPadding == 0) {
             rawBitmap
         } else {

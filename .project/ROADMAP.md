@@ -15,6 +15,14 @@ The project is structured into 11 rigorous checkpoints (`CP-00` through `CP-10`)
 | **CP-08** | Quick Access & System Shortcuts | Quick Settings Tile (`TileService`), Notification action, App shortcut, optional floating trigger bubble. | **COMPLETED** |
 | **CP-09** | Reliability, Privacy, Error Handling & Lifecycle | Ephemeral memory cleanup, graceful error banners, network/offline fallbacks, screen orientation & memory management. | **COMPLETED** |
 | **CP-10** | Performance Optimization, Testing & Release Build | Profile pipeline latency, cancel stale jobs, unit tests, end-to-end verification, production release build. | **COMPLETED** |
+| **UI-REDESIGN-01** | Visual Audit of Existing Implementation | Audit all major screens, drawables, vector assets, and UX friction points. | **COMPLETED** |
+| **UI-REDESIGN-02** | Design System & Token Architecture | Define `DESIGN.md`, semantic tokens (Color, Type, Theme, Spacing, Shapes). | **COMPLETED** |
+| **UI-REDESIGN-03** | Main / Settings UI Redesign | Refined hierarchy, calm slate palette, clean CTA, non-intrusive status, dialog pickers. | **COMPLETED** |
+| **UI-REDESIGN-04** | App Icon & Brand Symbol | Adaptive launcher icon, monochrome support, safe zone, ownable screen transformation glyph. | **COMPLETED** |
+| **UI-REDESIGN-05** | Floating Bubble System | Compact 52dp bubble, 3s idle dimming, snap-to-edge, magnetic dismiss target. | **COMPLETED** |
+| **UI-REDESIGN-06** | Bubble Themes Refinement | Brand Azure, Obsidian Dark, Pearl Light (with dark glyph), Indigo Royale. | **COMPLETED** |
+| **UI-REDESIGN-07** | Translation Overlay Controls | Floating blurred capsule, unobtrusive action controls, clear active crop state. | **COMPLETED** |
+| **UI-REDESIGN-08** | Accessibility & Visual QA | Touch target sizes (>=48dp), WCAG AA contrast, unit test pass, debug build verification. | **IN PROGRESS** |
 
 ---
 

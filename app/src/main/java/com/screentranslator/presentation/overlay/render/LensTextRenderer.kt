@@ -44,9 +44,9 @@ object LensTextRenderer {
         // 1. Draw Background Mask Patch
         maskPaint.color = block.backgroundColor ?: 0xEE1E293B.toInt()
         val patchRect = RectF(
-            left - 2f,
+            left - 3f,
             top - 2f,
-            right + 2f,
+            right + 3f,
             bottom + 2f
         )
         val cornerRadius = 6f
@@ -58,41 +58,76 @@ object LensTextRenderer {
 
         textPaint.color = block.textColor
 
-        // Dynamically compute optimal font size
-        var fontSize = (targetHeight * 0.75f).coerceIn(11f, 72f)
-        textPaint.textSize = fontSize
+        // Determine if text is a reading paragraph vs short UI label
+        val isReadingBlock = text.length > 35 || targetHeight > 45f
+        val alignment = if (isReadingBlock) Layout.Alignment.ALIGN_NORMAL else Layout.Alignment.ALIGN_CENTER
 
-        var staticLayout = createStaticLayout(text, textPaint, targetWidth.toInt())
+        val padX = if (isReadingBlock) 4f else 2f
+        val padY = 2f
+        val availableWidth = (targetWidth - padX * 2).coerceAtLeast(10f).toInt()
+        val availableHeight = (targetHeight - padY * 2).coerceAtLeast(10f)
 
-        // Shrink font size if text exceeds bounding box height
-        var attempts = 0
-        while (staticLayout.height > targetHeight && fontSize > 10f && attempts < 8) {
-            fontSize *= 0.85f
-            textPaint.textSize = fontSize
-            staticLayout = createStaticLayout(text, textPaint, targetWidth.toInt())
-            attempts++
-        }
+        // Dynamically find optimal font size using fast binary search
+        val optimalFontSize = findOptimalFontSize(text, availableWidth, availableHeight, isReadingBlock)
+        textPaint.textSize = optimalFontSize
 
-        // 3. Center and Draw Text inside Bounding Box
-        val textVerticalOffset = top + ((targetHeight - staticLayout.height) / 2f).coerceAtLeast(0f)
+        val staticLayout = createStaticLayout(text, textPaint, availableWidth, alignment)
+
+        // 3. Position and Draw Text inside Bounding Box
+        val textVerticalOffset = top + padY + ((availableHeight - staticLayout.height) / 2f).coerceAtLeast(0f)
+        val textHorizontalOffset = left + padX
 
         canvas.save()
-        canvas.translate(left, textVerticalOffset)
+        canvas.translate(textHorizontalOffset, textVerticalOffset)
         staticLayout.draw(canvas)
         canvas.restore()
+    }
+
+    private fun findOptimalFontSize(
+        text: CharSequence,
+        width: Int,
+        height: Float,
+        isReadingBlock: Boolean
+    ): Float {
+        val minSize = 9f
+        val maxSize = if (isReadingBlock) {
+            (height * 0.7f).coerceIn(12f, 32f)
+        } else {
+            (height * 0.75f).coerceIn(11f, 64f)
+        }
+
+        var low = minSize
+        var high = maxSize
+        var best = minSize
+
+        // Binary search fits within ~5 iterations
+        for (i in 0 until 5) {
+            val mid = (low + high) / 2f
+            textPaint.textSize = mid
+            val layout = createStaticLayout(text, textPaint, width, Layout.Alignment.ALIGN_NORMAL)
+            if (layout.height <= height) {
+                best = mid
+                low = mid + 0.5f
+            } else {
+                high = mid - 0.5f
+            }
+        }
+
+        return best
     }
 
     private fun createStaticLayout(
         text: CharSequence,
         paint: TextPaint,
-        width: Int
+        width: Int,
+        alignment: Layout.Alignment
     ): StaticLayout {
         val safeWidth = width.coerceAtLeast(10)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             StaticLayout.Builder.obtain(text, 0, text.length, paint, safeWidth)
-                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setAlignment(alignment)
                 .setIncludePad(false)
-                .setMaxLines(4)
+                .setMaxLines(100)
                 .build()
         } else {
             @Suppress("DEPRECATION")
@@ -100,7 +135,7 @@ object LensTextRenderer {
                 text,
                 paint,
                 safeWidth,
-                Layout.Alignment.ALIGN_CENTER,
+                alignment,
                 1.0f,
                 0.0f,
                 false

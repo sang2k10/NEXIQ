@@ -114,6 +114,9 @@ class OverlayManager(
                                 container.retranslateCropUseCase(pixelRect)
                             }
                         },
+                        onDismissError = {
+                            sessionRepo.updateSession { it.copy(errorMessage = null) }
+                        },
                         onCloseSession = {
                             hideOverlay()
                         }

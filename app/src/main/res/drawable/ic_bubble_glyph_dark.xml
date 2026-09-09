@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Clean Minimal Translate Glyph Dark -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M 12.87,15.07 L 10.33,12.56 C 12.07,10.62 13.31,8.39 14.04,6.03 H 17 V 4.04 H 10 V 2.05 H 8 V 4.04 H 1 V 6.03 H 12.17 C 11.5,7.92 10.44,9.75 9,11.35 C 8.07,10.32 7.3,9.19 6.69,8 H 4.69 C 5.42,9.63 6.42,11.17 7.67,12.56 L 2.56,17.58 L 4,19 L 9,14 L 12.11,17.11 L 12.87,15.07 Z M 18.5,10 H 16.5 L 12,22 H 14 L 15.12,19 H 19.87 L 21,22 H 23 L 18.5,10 Z M 15.88,17 L 17.5,12.67 L 19.12,17 H 15.88 Z" />
+</vector>

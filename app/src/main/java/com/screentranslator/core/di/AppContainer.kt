@@ -28,8 +28,20 @@ class AppContainer(context: Context) {
         com.screentranslator.data.engine.mlkit.MlKitOcrEngine()
     }
 
-    val translationEngine: com.screentranslator.domain.engine.TranslationEngine by lazy {
+    val mlKitTranslationEngine: com.screentranslator.domain.engine.TranslationEngine by lazy {
         com.screentranslator.data.engine.mlkit.MlKitTranslationEngine()
+    }
+
+    val googleWebTranslationEngine: com.screentranslator.domain.engine.TranslationEngine by lazy {
+        com.screentranslator.data.engine.web.GoogleWebTranslationEngine()
+    }
+
+    val translationEngine: com.screentranslator.domain.engine.TranslationEngine by lazy {
+        com.screentranslator.data.engine.DelegatingTranslationEngine(
+            mlKitEngine = mlKitTranslationEngine,
+            googleWebEngine = googleWebTranslationEngine,
+            settingsRepository = settingsRepository
+        )
     }
 
     val executeOcrUseCase: com.screentranslator.domain.usecase.ExecuteOcrUseCase by lazy {
