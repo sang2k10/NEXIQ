@@ -6,19 +6,20 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkNexiqColors.brandPrimary,
-    onPrimary = DarkNexiqColors.textPrimary,
-    primaryContainer = DarkNexiqColors.brandPrimaryMuted,
-    onPrimaryContainer = DarkNexiqColors.brandPrimaryLighter,
-    secondary = DarkNexiqColors.brandPrimaryLighter,
+    onPrimary = Color(0xFF090D14),
+    primaryContainer = DarkNexiqColors.brandPrimaryContainer,
+    onPrimaryContainer = DarkNexiqColors.brandPrimaryOnContainer,
+    secondary = DarkNexiqColors.brandPrimary,
     onSecondary = DarkNexiqColors.surfaceBase,
     background = DarkNexiqColors.surfaceBase,
     onBackground = DarkNexiqColors.textPrimary,
     surface = DarkNexiqColors.surfaceContainer,
     onSurface = DarkNexiqColors.textPrimary,
-    surfaceVariant = DarkNexiqColors.surfaceCard,
+    surfaceVariant = DarkNexiqColors.surfaceElevated,
     onSurfaceVariant = DarkNexiqColors.textSecondary,
     outline = DarkNexiqColors.borderSubtle,
     outlineVariant = DarkNexiqColors.borderMedium,
@@ -31,15 +32,15 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     primary = LightNexiqColors.brandPrimary,
     onPrimary = LightNexiqColors.surfaceContainer,
-    primaryContainer = LightNexiqColors.brandPrimaryMuted,
-    onPrimaryContainer = LightNexiqColors.brandPrimary,
-    secondary = LightNexiqColors.brandPrimaryLighter,
+    primaryContainer = LightNexiqColors.brandPrimaryContainer,
+    onPrimaryContainer = LightNexiqColors.brandPrimaryOnContainer,
+    secondary = LightNexiqColors.brandPrimary,
     onSecondary = LightNexiqColors.surfaceContainer,
     background = LightNexiqColors.surfaceBase,
     onBackground = LightNexiqColors.textPrimary,
     surface = LightNexiqColors.surfaceContainer,
     onSurface = LightNexiqColors.textPrimary,
-    surfaceVariant = LightNexiqColors.surfaceCard,
+    surfaceVariant = LightNexiqColors.surfaceElevated,
     onSurfaceVariant = LightNexiqColors.textSecondary,
     outline = LightNexiqColors.borderSubtle,
     outlineVariant = LightNexiqColors.borderMedium,
@@ -61,6 +62,7 @@ fun ScreenTranslatorTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = ScreenTranslatorTypography,
+            shapes = NexiqShapes,
             content = content
         )
     }

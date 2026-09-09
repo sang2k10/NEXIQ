@@ -1,10 +1,8 @@
 package com.screentranslator.presentation.settings
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,10 +12,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,10 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +37,7 @@ import androidx.compose.ui.window.Dialog
 import com.screentranslator.R
 import com.screentranslator.domain.model.AppSettings
 import com.screentranslator.domain.model.Language
+import com.screentranslator.presentation.ui.components.*
 import com.screentranslator.presentation.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,11 +69,11 @@ fun SettingsScreen(
     onOpenAppDetails: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
-    // Dialog States
+    // Dialog states
     var languagePickerTarget by remember { mutableStateOf<LanguagePickerType?>(null) }
     var enginePickerTarget by remember { mutableStateOf<EnginePickerType?>(null) }
-    var showRestrictedHelp by remember { mutableStateOf(false) }
     var showVideoGuideDialog by remember { mutableStateOf(false) }
     var showOnboardingDialog by remember { mutableStateOf(false) }
     var showCloudConfirmationDialog by remember { mutableStateOf(false) }
@@ -93,42 +91,39 @@ fun SettingsScreen(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.md)
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = BrandPrimary,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                            modifier = Modifier.size(46.dp)
+                            shape = ControlShape,
+                            color = SurfaceElevated,
+                            border = BorderStroke(1.dp, BorderSubtle),
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Image(
                                     painter = painterResource(R.drawable.ic_bubble_translate),
-                                    contentDescription = "NEXIQ Brand Logo",
-                                    modifier = Modifier.size(34.dp)
+                                    contentDescription = "NEXIQ Viewframe Logo",
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
                         Column {
                             Text(
                                 text = "NEXIQ",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary
                             )
                             Text(
-                                text = "Understand what's on your screen.",
+                                text = "Screen Understanding & Translation",
                                 style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                                color = TextSecondary
+                                color = TextSecondary,
+                                fontSize = 11.sp
                             )
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SurfaceBase
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceBase)
             )
         },
         containerColor = SurfaceBase
@@ -138,677 +133,345 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = NexiqSpacing.screenHorizontal, vertical = NexiqSpacing.sm)
         ) {
 
-            // 1. User Guide / Demo Video Card (Replaced hero "Translate Screen Now" per user request)
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceContainer,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showVideoGuideDialog = true }
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            // 1. Optional Permission Alert (Clean banner, only when missing)
+            if (!hasOverlayPermission) {
+                Surface(
+                    shape = ContainerShape,
+                    color = SurfaceElevated,
+                    border = BorderStroke(1.dp, BorderSubtle),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(NexiqSpacing.lg),
+                        verticalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = BrandAccentMuted
-                                ) {
-                                    Text(
-                                        text = "USER GUIDE",
-                                        color = BrandAccent,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                                Text(
-                                    text = "30s Demo",
-                                    fontSize = 11.sp,
-                                    color = TextSecondary
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "How NEXIQ Works",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Layers,
+                                contentDescription = null,
+                                tint = BrandPrimary,
+                                modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "Tap to watch a visual guide on using the floating bubble & in-place translation.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary,
-                                fontSize = 12.sp
-                            )
-                        }
-
-                        Surface(
-                            shape = CircleShape,
-                            color = BrandAccent,
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Watch Demo",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    if (!hasOverlayPermission) {
-                        Button(
-                            onClick = onGrantOverlayPermission,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = BrandAccent),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Layers, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Grant 'Display Over Other Apps' Permission", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-
-            // 2. Hardware Screenshot Status Card (Fixed "RECOMMENDED" text wrapping)
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = if (isAccessibilityEnabled) SuccessGreenContainer else SurfaceContainer,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    if (isAccessibilityEnabled) SuccessGreen.copy(alpha = 0.5f) else BorderSubtle
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isAccessibilityEnabled) SuccessGreen.copy(alpha = 0.2f) else BorderMedium,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = if (isAccessibilityEnabled) Icons.Default.CheckCircle else Icons.Outlined.CameraAlt,
-                                    contentDescription = null,
-                                    tint = if (isAccessibilityEnabled) SuccessGreen else TextSecondary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Instant Screenshot Access",
+                                text = "Overlay Permission Required",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (isAccessibilityEnabled) SuccessGreen else BrandAccent,
-                                    modifier = Modifier.size(7.dp)
-                                ) {}
-                                Text(
-                                    text = if (isAccessibilityEnabled) "Active (Static screenshots ready)" else "Setup Recommended (One-Time)",
-                                    color = if (isAccessibilityEnabled) SuccessGreen else TextSecondary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (isAccessibilityEnabled) {
-                            "Captures clean static screenshots directly without system recording prompts or video stutter."
-                        } else {
-                            "Grant once in Accessibility Settings to take static screenshots without system screen recording prompts."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
-                        fontSize = 12.sp
-                    )
-
-                    if (!isAccessibilityEnabled) {
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "To display translated text directly on top of your screen, grant 'Display Over Other Apps' permission.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
                         Button(
-                            onClick = onOpenAccessibilitySettings,
-                            shape = RoundedCornerShape(10.dp),
+                            onClick = onGrantOverlayPermission,
+                            shape = ControlShape,
                             colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(38.dp)
+                            contentPadding = PaddingValues(horizontal = NexiqSpacing.md, vertical = NexiqSpacing.sm),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Open Accessibility Settings", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Progressive disclosure for Android 13+ restricted settings
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { showRestrictedHelp = !showRestrictedHelp }
-                                .padding(vertical = 4.dp, horizontal = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(Icons.Outlined.HelpOutline, contentDescription = null, tint = BrandAccent, modifier = Modifier.size(14.dp))
-                                Text(
-                                    text = "Phone blocks permission ('Restricted setting')?",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = BrandAccent,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            Icon(
-                                imageVector = if (showRestrictedHelp) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = null,
-                                tint = BrandAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = showRestrictedHelp,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = SurfaceCardSubtle,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = "Android blocks accessibility for sideloaded apps. Unlock it in 3 steps:",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary,
-                                        fontSize = 12.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = "1. Tap 'Open App Info' below\n2. Tap the ⋮ (three dots) in top-right corner\n3. Tap 'Allow restricted settings' and enter your PIN\n4. Return here and grant the permission",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextPrimary,
-                                        lineHeight = 18.sp,
-                                        fontSize = 12.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    OutlinedButton(
-                                        onClick = onOpenAppDetails,
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandPrimaryLighter),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMedium),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(36.dp)
-                                    ) {
-                                        Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Open App Info", fontSize = 12.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 3. Section: Translation & Languages
-            SectionHeader(title = "TRANSLATION & RECOGNITION")
-
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceContainer,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    SettingNavigationRow(
-                        title = "Default Source Language",
-                        subtitle = settings.defaultSourceLanguage.displayName,
-                        leadingIcon = Icons.Outlined.Language,
-                        onClick = { languagePickerTarget = LanguagePickerType.SOURCE }
-                    )
-
-                    HorizontalDivider(color = BorderSubtle, modifier = Modifier.padding(horizontal = 16.dp))
-
-                    SettingNavigationRow(
-                        title = "Default Target Language",
-                        subtitle = settings.defaultTargetLanguage.displayName,
-                        leadingIcon = Icons.Outlined.Translate,
-                        onClick = { languagePickerTarget = LanguagePickerType.TARGET }
-                    )
-
-                    HorizontalDivider(color = BorderSubtle, modifier = Modifier.padding(horizontal = 16.dp))
-
-                    SettingNavigationRow(
-                        title = "Translation Engine",
-                        subtitle = getTranslationEngineName(settings.selectedTranslationEngineId),
-                        leadingIcon = Icons.Outlined.AutoAwesome,
-                        onClick = { enginePickerTarget = EnginePickerType.TRANSLATION }
-                    )
-
-                    HorizontalDivider(color = BorderSubtle, modifier = Modifier.padding(horizontal = 16.dp))
-
-                    SettingNavigationRow(
-                        title = "OCR Recognition Engine",
-                        subtitle = getOcrEngineName(settings.selectedOcrEngineId),
-                        leadingIcon = Icons.Outlined.DocumentScanner,
-                        onClick = { enginePickerTarget = EnginePickerType.OCR }
-                    )
-                }
-            }
-
-            // 4. Section: Interface & Display (Includes Theme Mode: System / Light / Dark)
-            SectionHeader(title = "INTERFACE & DISPLAY")
-
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceContainer,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Theme Mode Selector
-                    Column {
-                        Text("App Color Theme", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("Choose between Light, Dark, or System Default", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, fontSize = 12.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf(
-                                "system" to "System",
-                                "light" to "Light",
-                                "dark" to "Dark"
-                            ).forEach { (mode, label) ->
-                                val isSelected = settings.themeMode.equals(mode, ignoreCase = true)
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = if (isSelected) BrandPrimaryMuted else SurfaceCardSubtle,
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp,
-                                        if (isSelected) BrandPrimary else BorderSubtle
-                                    ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { onUpdateThemeMode(mode) }
-                                ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier.padding(vertical = 10.dp)
-                                    ) {
-                                        Text(
-                                            text = label,
-                                            color = if (isSelected) BrandPrimary else TextSecondary,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            fontSize = 13.sp
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(color = BorderSubtle)
-
-                    // Overlay Background Opacity
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Overlay Dimming", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = SurfaceCardSubtle,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-                            ) {
-                                Text(
-                                    text = "${(settings.overlayOpacity * 100).toInt()}%",
-                                    color = BrandPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        Slider(
-                            value = settings.overlayOpacity,
-                            onValueChange = onUpdateOverlayOpacity,
-                            valueRange = 0.5f..1.0f,
-                            colors = SliderDefaults.colors(
-                                thumbColor = BrandPrimary,
-                                activeTrackColor = BrandPrimary,
-                                inactiveTrackColor = BorderMedium
-                            )
-                        )
-                    }
-
-                    HorizontalDivider(color = BorderSubtle)
-
-                    // Initial Scale
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Initial Image Scale", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = SurfaceCardSubtle,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-                            ) {
-                                Text(
-                                    text = "${(settings.initialScale * 100).toInt()}%",
-                                    color = BrandPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        Slider(
-                            value = settings.initialScale,
-                            onValueChange = onUpdateInitialScale,
-                            valueRange = 0.7f..1.0f,
-                            colors = SliderDefaults.colors(
-                                thumbColor = BrandPrimary,
-                                activeTrackColor = BrandPrimary,
-                                inactiveTrackColor = BorderMedium
-                            )
-                        )
-                    }
-                }
-            }
-
-            // 5. Section: Floating Bubble (Theme, Size, Icon Style)
-            SectionHeader(title = "FLOATING BUBBLE & SHORTCUTS")
-
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceContainer,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    SettingToggleRow(
-                        title = "Floating Shortcut Bubble",
-                        subtitle = "Persistent trigger on screen edge for one-tap translation",
-                        checked = settings.floatingButtonEnabled,
-                        onCheckedChange = onToggleFloatingButton
-                    )
-
-                    if (settings.floatingButtonEnabled) {
-                        HorizontalDivider(color = BorderSubtle)
-
-                        // 1. Bubble Color Theme (Synchronized preview!)
-                        BubbleThemeSelector(
-                            selectedTheme = settings.bubbleTheme,
-                            selectedIconStyle = settings.bubbleIconStyle,
-                            onSelectTheme = onUpdateBubbleTheme
-                        )
-
-                        HorizontalDivider(color = BorderSubtle)
-
-                        // 2. Bubble Icon Style (Simpler / Alternative options)
-                        BubbleIconStyleSelector(
-                            selectedIconStyle = settings.bubbleIconStyle,
-                            selectedTheme = settings.bubbleTheme,
-                            onSelectIconStyle = onUpdateBubbleIconStyle
-                        )
-
-                        HorizontalDivider(color = BorderSubtle)
-
-                        // 3. Bubble Size Customization Slider
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Bubble Size", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = SurfaceCardSubtle,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-                                ) {
-                                    Text(
-                                        text = "${settings.bubbleSizeDp} dp",
-                                        color = BrandPrimary,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            Slider(
-                                value = settings.bubbleSizeDp.toFloat(),
-                                onValueChange = { onUpdateBubbleSize(it.toInt()) },
-                                valueRange = 40f..64f,
-                                steps = 11,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = BrandPrimary,
-                                    activeTrackColor = BrandPrimary,
-                                    inactiveTrackColor = BorderMedium
-                                )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        OutlinedButton(
-                            onClick = onReopenBubble,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandPrimary),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderMedium),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(40.dp)
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Reopen Bubble on Screen", fontSize = 13.sp)
-                        }
-                    }
-
-                    HorizontalDivider(color = BorderSubtle)
-
-                    SettingToggleRow(
-                        title = "Auto-start Translation",
-                        subtitle = "Run OCR and translation immediately upon capture",
-                        checked = settings.autoStartTranslation,
-                        onCheckedChange = onToggleAutoStart
-                    )
-
-                    HorizontalDivider(color = BorderSubtle)
-
-                    SettingToggleRow(
-                        title = "Remember Language Pair",
-                        subtitle = "Preserve the last used language selection across app sessions",
-                        checked = settings.rememberLastLanguagePair,
-                        onCheckedChange = onToggleRememberPair
-                    )
-
-                    HorizontalDivider(color = BorderSubtle)
-
-                    SettingToggleRow(
-                        title = "Haptic Vibration",
-                        subtitle = "Subtle tactile feedback on capture and completion",
-                        checked = settings.hapticFeedback,
-                        onCheckedChange = onToggleHaptic
-                    )
-                }
-            }
-
-            // 6. Section: Privacy & Storage
-            SectionHeader(title = "PRIVACY & STORAGE")
-
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceContainer,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = SuccessGreen.copy(alpha = 0.15f),
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Shield, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                        Column {
-                            Text("Private by Design & Transparent Processing", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                             Text(
-                                text = "Screen content is processed in transient memory during translation sessions. No background tracking, profiling, or telemetry.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary,
-                                fontSize = 12.sp
+                                text = "Grant Permission",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White
                             )
                         }
                     }
+                }
+                Spacer(modifier = Modifier.height(NexiqSpacing.md))
+            }
 
-                    HorizontalDivider(color = BorderSubtle)
+            // 2. Assisted Screen Capture Status (Clean, quiet banner)
+            NexiqStatusBanner(
+                title = "Assisted Static Screen Capture",
+                description = if (isAccessibilityEnabled) {
+                    "Accessibility screenshot service is active for instantaneous, zero-prompt captures."
+                } else {
+                    "Enable the optional Accessibility service to capture clean screenshots without repeated recording prompts."
+                },
+                isActive = isAccessibilityEnabled,
+                actionText = "Open Accessibility Settings",
+                onActionClick = onOpenAccessibilitySettings
+            )
 
-                    // Button to review welcome guide & privacy disclosures anytime
-                    OutlinedButton(
-                        onClick = { showOnboardingDialog = true },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandPrimary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderMedium),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                    ) {
-                        Icon(Icons.Outlined.Security, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Review Privacy Disclosures & Guide", fontSize = 13.sp)
+            // 3. Section: General Translation
+            NexiqSectionHeader(title = "General Translation")
+
+            NexiqSettingRow(
+                title = "Source Language",
+                subtitle = "Language visible on screen",
+                trailingText = settings.defaultSourceLanguage.displayName,
+                showChevron = true,
+                onClick = { languagePickerTarget = LanguagePickerType.SOURCE }
+            )
+            NexiqDivider()
+
+            NexiqSettingRow(
+                title = "Target Language",
+                subtitle = "Language to translate into",
+                trailingText = settings.defaultTargetLanguage.displayName,
+                showChevron = true,
+                onClick = { languagePickerTarget = LanguagePickerType.TARGET }
+            )
+            NexiqDivider()
+
+            NexiqSettingRow(
+                title = "Translation Engine",
+                subtitle = "Processing provider",
+                trailingText = getTranslationEngineName(settings.selectedTranslationEngineId),
+                showChevron = true,
+                onClick = { enginePickerTarget = EnginePickerType.TRANSLATION }
+            )
+            NexiqDivider()
+
+            NexiqSettingRow(
+                title = "OCR Recognition Engine",
+                subtitle = "Text detection model",
+                trailingText = getOcrEngineName(settings.selectedOcrEngineId),
+                showChevron = true,
+                onClick = { enginePickerTarget = EnginePickerType.OCR }
+            )
+            NexiqDivider()
+
+            NexiqSwitchRow(
+                title = "Auto-start Translation",
+                subtitle = "Execute OCR and translation immediately upon screen capture",
+                checked = settings.autoStartTranslation,
+                onCheckedChange = onToggleAutoStart
+            )
+            NexiqDivider()
+
+            NexiqSwitchRow(
+                title = "Remember Language Pair",
+                subtitle = "Preserve the last used language selection across sessions",
+                checked = settings.rememberLastLanguagePair,
+                onCheckedChange = onToggleRememberPair
+            )
+
+            // 4. Section: Appearance & Display
+            NexiqSectionHeader(title = "Appearance & Display")
+
+            // Theme Mode Selector (Segmented Row)
+            Column(modifier = Modifier.padding(horizontal = NexiqSpacing.xs, vertical = NexiqSpacing.sm)) {
+                Text(
+                    text = "Theme Mode",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(NexiqSpacing.xxs))
+                Text(
+                    text = "System default, light, or dark appearance",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+                Spacer(modifier = Modifier.height(NexiqSpacing.md))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)
+                ) {
+                    listOf(
+                        "system" to "System",
+                        "light" to "Light",
+                        "dark" to "Dark"
+                    ).forEach { (mode, label) ->
+                        val isSelected = settings.themeMode.equals(mode, ignoreCase = true)
+                        Surface(
+                            shape = ControlShape,
+                            color = if (isSelected) BrandPrimaryContainer else SurfaceElevated,
+                            border = BorderStroke(
+                                1.dp,
+                                if (isSelected) BrandPrimary else BorderSubtle
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(ControlShape)
+                                .clickable { onUpdateThemeMode(mode) }
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(vertical = NexiqSpacing.md)
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) BrandPrimary else TextSecondary,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
                     }
+                }
+            }
+            NexiqDivider()
 
-                    HorizontalDivider(color = BorderSubtle)
+            NexiqSliderRow(
+                title = "Overlay Dimming",
+                valueText = "${(settings.overlayOpacity * 100).toInt()}%",
+                value = settings.overlayOpacity,
+                onValueChange = onUpdateOverlayOpacity,
+                valueRange = 0.5f..1.0f,
+                subtitle = "Background dimming level behind translated text"
+            )
+            NexiqDivider()
 
-                    SettingToggleRow(
-                        title = "Save Translation History",
-                        subtitle = "Store text translation queries locally on this device",
-                        checked = settings.saveHistory,
-                        onCheckedChange = onToggleHistory
-                    )
+            NexiqSliderRow(
+                title = "Initial Image Scale",
+                valueText = "${(settings.initialScale * 100).toInt()}%",
+                value = settings.initialScale,
+                onValueChange = onUpdateInitialScale,
+                valueRange = 0.7f..1.0f,
+                subtitle = "Initial canvas viewport scale upon capture"
+            )
+
+            // 5. Section: Floating Shortcut
+            NexiqSectionHeader(title = "Floating Shortcut")
+
+            NexiqSwitchRow(
+                title = "Floating Shortcut Bubble",
+                subtitle = "Persistent screen-edge trigger for one-tap capture",
+                checked = settings.floatingButtonEnabled,
+                onCheckedChange = onToggleFloatingButton
+            )
+
+            if (settings.floatingButtonEnabled) {
+                NexiqDivider()
+
+                // Bubble Color Theme (Visual circular swatches)
+                BubbleColorThemePicker(
+                    selectedTheme = settings.bubbleTheme,
+                    onSelectTheme = onUpdateBubbleTheme
+                )
+
+                NexiqDivider()
+
+                // Bubble Icon Style (Visual icon preview tiles)
+                BubbleIconStylePicker(
+                    selectedIconStyle = settings.bubbleIconStyle,
+                    selectedTheme = settings.bubbleTheme,
+                    onSelectIconStyle = onUpdateBubbleIconStyle
+                )
+
+                NexiqDivider()
+
+                NexiqSliderRow(
+                    title = "Bubble Size",
+                    valueText = "${settings.bubbleSizeDp} dp",
+                    value = settings.bubbleSizeDp.toFloat(),
+                    onValueChange = { onUpdateBubbleSize(it.toInt()) },
+                    valueRange = 40f..64f,
+                    steps = 11,
+                    subtitle = "Diameter of the floating trigger icon"
+                )
+
+                Spacer(modifier = Modifier.height(NexiqSpacing.xs))
+
+                OutlinedButton(
+                    onClick = onReopenBubble,
+                    shape = ControlShape,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandPrimary),
+                    border = BorderStroke(1.dp, BorderMedium),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = NexiqSpacing.xs)
+                        .height(40.dp)
+                ) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(NexiqSpacing.sm))
+                    Text("Reopen Bubble on Screen", fontSize = 13.sp)
                 }
             }
 
-            // Quick Access Tips
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = SurfaceBase,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                modifier = Modifier.fillMaxWidth()
+            NexiqDivider()
+
+            NexiqSwitchRow(
+                title = "Haptic Vibration",
+                subtitle = "Tactile feedback on capture and completion",
+                checked = settings.hapticFeedback,
+                onCheckedChange = onToggleHaptic
+            )
+
+            // 6. Section: Privacy & Data
+            NexiqSectionHeader(title = "Privacy & Data")
+
+            NexiqSettingRow(
+                title = "Private by Design",
+                subtitle = "Screen content is processed in transient memory during translation sessions. No background tracking or advertising telemetry.",
+                leadingIcon = Icons.Outlined.Shield
+            )
+            NexiqDivider()
+
+            NexiqSwitchRow(
+                title = "Save Translation History",
+                subtitle = "Store text translation queries locally on this device",
+                checked = settings.saveHistory,
+                onCheckedChange = onToggleHistory
+            )
+            NexiqDivider()
+
+            OutlinedButton(
+                onClick = { showOnboardingDialog = true },
+                shape = ControlShape,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandPrimary),
+                border = BorderStroke(1.dp, BorderMedium),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = NexiqSpacing.xs, vertical = NexiqSpacing.xs)
+                    .height(40.dp)
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(Icons.Outlined.TipsAndUpdates, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
-                        Text("Quick Access Tips", style = MaterialTheme.typography.labelMedium, color = TextPrimary)
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "• Quick Settings Tile: Pull down status shade and tap 'Edit' to add the 'Translate Screen' tile.\n• Notification Shortcut: Use the persistent service notification to trigger translation from any app.\n• Floating Bubble: Keep a draggable shortcut floating at screen edge for single-tap translation.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        lineHeight = 18.sp,
-                        fontSize = 11.sp
-                    )
-                }
+                Icon(Icons.Outlined.Security, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(NexiqSpacing.sm))
+                Text("Review Privacy Disclosures & Guide", fontSize = 13.sp)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // 7. Section: Help & About
+            NexiqSectionHeader(title = "Help & About")
+
+            NexiqSettingRow(
+                title = "How NEXIQ Works",
+                subtitle = "30-second quick guide on screen translation",
+                leadingIcon = Icons.AutoMirrored.Filled.HelpOutline,
+                showChevron = true,
+                onClick = { showVideoGuideDialog = true }
+            )
+            NexiqDivider()
+
+            NexiqSettingRow(
+                title = "App Info",
+                subtitle = "NEXIQ v1.0.0 (Build 1)",
+                leadingIcon = Icons.Outlined.Info,
+                showChevron = true,
+                onClick = onOpenAppDetails
+            )
+            NexiqDivider()
+
+            NexiqSettingRow(
+                title = "View Source on GitHub",
+                subtitle = "https://github.com/sang2k10/NEXIQ",
+                leadingIcon = Icons.AutoMirrored.Filled.OpenInNew,
+                showChevron = true,
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sang2k10/NEXIQ")).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    try {
+                        context.startActivity(intent)
+                    } catch (_: Exception) {}
+                }
+            )
+
+            Spacer(modifier = Modifier.height(NexiqSpacing.section))
         }
     }
 
-    // Modal Dialog for Demo Video Walkthrough
-    if (showVideoGuideDialog) {
-        DemoVideoGuideDialog(
-            onDismiss = { showVideoGuideDialog = false }
-        )
-    }
-
-    // Modal Dialog for Onboarding & Privacy Guarantee (First Launch + Reviewable)
-    if (showOnboardingDialog) {
-        OnboardingPrivacyDialog(
-            onAccept = {
-                onAcceptOnboarding()
-                showOnboardingDialog = false
-            },
-            onDismiss = { showOnboardingDialog = false }
-        )
-    }
-
-    // Modal Dialog for Language Picker
+    // Modal: Language Selection
     if (languagePickerTarget != null) {
         val isSource = languagePickerTarget == LanguagePickerType.SOURCE
         val currentLang = if (isSource) settings.defaultSourceLanguage else settings.defaultTargetLanguage
@@ -826,7 +489,7 @@ fun SettingsScreen(
         )
     }
 
-    // Modal Dialog for Engine Picker
+    // Modal: Engine Selection
     if (enginePickerTarget != null) {
         val isTranslation = enginePickerTarget == EnginePickerType.TRANSLATION
         val title = if (isTranslation) "Select Translation Engine" else "Select OCR Engine"
@@ -840,7 +503,7 @@ fun SettingsScreen(
             )
         } else {
             listOf(
-                "mlkit" to "Google ML Kit (Latin, Japanese, Chinese, Korean)",
+                "mlkit" to "Google ML Kit Multi-script",
                 "tesseract" to "Tesseract OCR (Planned)"
             )
         }
@@ -865,16 +528,17 @@ fun SettingsScreen(
         )
     }
 
+    // Modal: Cloud Confirmation Warning
     if (showCloudConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showCloudConfirmationDialog = false },
             title = {
-                Text("Enable Cloud Translation?", fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text("Enable Cloud Translation?", fontWeight = FontWeight.SemiBold, color = TextPrimary)
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)) {
                     Text(
-                        text = "Selecting Experimental Cloud Translation sends extracted text over HTTPS to Google Translate web servers.",
+                        text = "Selecting Experimental Cloud Translation transmits extracted text over HTTPS to Google Translate web servers.",
                         color = TextPrimary,
                         fontSize = 13.sp
                     )
@@ -891,6 +555,7 @@ fun SettingsScreen(
                         onUpdateTranslationEngine("google_web")
                         showCloudConfirmationDialog = false
                     },
+                    shape = ControlShape,
                     colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
                 ) {
                     Text("Enable Cloud")
@@ -901,7 +566,24 @@ fun SettingsScreen(
                     Text("Keep On-Device", color = TextSecondary)
                 }
             },
-            containerColor = SurfaceContainer
+            containerColor = SurfaceContainer,
+            shape = DialogShape
+        )
+    }
+
+    // Modal: User Guide Walkthrough
+    if (showVideoGuideDialog) {
+        DemoVideoGuideDialog(onDismiss = { showVideoGuideDialog = false })
+    }
+
+    // Modal: First-Launch Onboarding & Privacy
+    if (showOnboardingDialog) {
+        OnboardingPrivacyDialog(
+            onAccept = {
+                onAcceptOnboarding()
+                showOnboardingDialog = false
+            },
+            onDismiss = { showOnboardingDialog = false }
         )
     }
 }
@@ -909,160 +591,80 @@ fun SettingsScreen(
 private enum class LanguagePickerType { SOURCE, TARGET }
 private enum class EnginePickerType { TRANSLATION, OCR }
 
+/**
+ * Bubble Color Theme Picker: Displays visual circular swatches instead of bulky cards.
+ */
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = TextTertiary,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-    )
-}
-
-@Composable
-private fun SettingNavigationRow(
-    title: String,
-    subtitle: String,
-    leadingIcon: ImageVector,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Icon(
-                imageVector = leadingIcon,
-                contentDescription = null,
-                tint = BrandPrimary,
-                modifier = Modifier.size(20.dp)
-            )
-            Column {
-                Text(text = title, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, fontSize = 12.sp)
-            }
-        }
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = TextTertiary,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
-@Composable
-private fun SettingToggleRow(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, fontSize = 12.sp)
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = BrandPrimary,
-                uncheckedThumbColor = TextSecondary,
-                uncheckedTrackColor = BorderMedium
-            )
-        )
-    }
-}
-
-// 1. Bubble Theme Selector (Synchronized with exact vector drawables!)
-@Composable
-private fun BubbleThemeSelector(
+private fun BubbleColorThemePicker(
     selectedTheme: String,
-    selectedIconStyle: String,
     onSelectTheme: (String) -> Unit
 ) {
     val themes = listOf(
-        ThemeItem("cyan", "Brand Azure", Color(0xFF0284C7), Color(0xFF38BDF8)),
-        ThemeItem("dark", "Obsidian Dark", Color(0xFF1E293B), Color(0xFF64748B)),
-        ThemeItem("pearl", "Pearl Light", Color(0xFFF8FAFC), Color(0xFFCBD5E1)),
-        ThemeItem("indigo", "Indigo Royale", Color(0xFF4F46E5), Color(0xFF818CF8))
+        ThemeItem("cyan", "Azure", Color(0xFF0284C7), Color(0xFF38BDF8)),
+        ThemeItem("dark", "Obsidian", Color(0xFF1E293B), Color(0xFF64748B)),
+        ThemeItem("pearl", "Pearl", Color(0xFFF8FAFC), Color(0xFFCBD5E1)),
+        ThemeItem("indigo", "Indigo", Color(0xFF4F46E5), Color(0xFF818CF8))
     )
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.padding(horizontal = NexiqSpacing.xs, vertical = NexiqSpacing.sm)) {
         Text(
             text = "Bubble Color Theme",
             style = MaterialTheme.typography.titleMedium,
             color = TextPrimary
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(NexiqSpacing.xxs))
         Text(
-            text = "Matches your device wallpaper and preference",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary,
-            fontSize = 12.sp
+            text = "Visual styling of the persistent edge bubble",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(NexiqSpacing.md))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)
         ) {
             themes.forEach { item ->
                 val isSelected = selectedTheme.equals(item.id, ignoreCase = true) ||
                         (selectedTheme.equals("sunset", ignoreCase = true) && item.id == "pearl")
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) BrandPrimaryMuted else SurfaceCardSubtle,
-                    border = androidx.compose.foundation.BorderStroke(
+                    shape = ControlShape,
+                    color = if (isSelected) BrandPrimaryContainer else SurfaceElevated,
+                    border = BorderStroke(
                         1.dp,
                         if (isSelected) BrandPrimary else BorderSubtle
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(ControlShape)
                         .clickable { onSelectTheme(item.id) }
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp)
+                        verticalArrangement = Arrangement.spacedBy(NexiqSpacing.xs),
+                        modifier = Modifier.padding(vertical = NexiqSpacing.md, horizontal = NexiqSpacing.xxs)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = item.color,
-                            border = androidx.compose.foundation.BorderStroke(1.2.dp, item.ringColor),
-                            modifier = Modifier.size(36.dp)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(item.color)
+                                .border(1.dp, item.ringColor, CircleShape)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                val iconRes = getBubbleDrawableRes(item.id, selectedIconStyle)
-                                Image(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = if (item.id == "pearl") Color(0xFF0F172A) else Color.White,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
                         Text(
                             text = item.label,
                             color = if (isSelected) TextPrimary else TextSecondary,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1074,74 +676,68 @@ private fun BubbleThemeSelector(
     }
 }
 
-// 2. Bubble Icon Style Selector (Simpler & alternative options)
+/**
+ * Bubble Icon Style Picker: Clean icon preview tiles.
+ */
 @Composable
-private fun BubbleIconStyleSelector(
+private fun BubbleIconStylePicker(
     selectedIconStyle: String,
     selectedTheme: String,
     onSelectIconStyle: (String) -> Unit
 ) {
     val styles = listOf(
-        IconStyleItem("brand", "NEXIQ Logo", R.drawable.ic_bubble_translate),
+        IconStyleItem("brand", "Viewframe N", R.drawable.ic_bubble_translate),
         IconStyleItem("lens", "Minimal Lens", R.drawable.ic_bubble_lens),
-        IconStyleItem("glyph", "Translate", R.drawable.ic_bubble_glyph),
+        IconStyleItem("glyph", "Text Glyph", R.drawable.ic_bubble_glyph),
         IconStyleItem("aperture", "Aperture", R.drawable.ic_bubble_aperture)
     )
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.padding(horizontal = NexiqSpacing.xs, vertical = NexiqSpacing.sm)) {
         Text(
             text = "Bubble Icon Style",
             style = MaterialTheme.typography.titleMedium,
             color = TextPrimary
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(NexiqSpacing.xxs))
         Text(
-            text = "Choose a simpler or brand-aligned icon inside the bubble",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary,
-            fontSize = 12.sp
+            text = "Graphic symbol displayed inside the floating bubble",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(NexiqSpacing.md))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)
         ) {
             styles.forEach { item ->
                 val isSelected = selectedIconStyle.equals(item.id, ignoreCase = true)
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) BrandPrimaryMuted else SurfaceCardSubtle,
-                    border = androidx.compose.foundation.BorderStroke(
+                    shape = ControlShape,
+                    color = if (isSelected) BrandPrimaryContainer else SurfaceElevated,
+                    border = BorderStroke(
                         1.dp,
                         if (isSelected) BrandPrimary else BorderSubtle
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(ControlShape)
                         .clickable { onSelectIconStyle(item.id) }
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp)
+                        verticalArrangement = Arrangement.spacedBy(NexiqSpacing.xs),
+                        modifier = Modifier.padding(vertical = NexiqSpacing.md, horizontal = NexiqSpacing.xxs)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = BrandPrimary,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Image(
-                                    painter = painterResource(item.drawableRes),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
+                        Image(
+                            painter = painterResource(item.drawableRes),
+                            contentDescription = item.label,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Text(
                             text = item.label,
                             color = if (isSelected) TextPrimary else TextSecondary,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1156,97 +752,101 @@ private fun BubbleIconStyleSelector(
 private data class ThemeItem(val id: String, val label: String, val color: Color, val ringColor: Color)
 private data class IconStyleItem(val id: String, val label: String, val drawableRes: Int)
 
-private fun getBubbleDrawableRes(theme: String, iconStyle: String): Int {
-    val isDark = when (theme.lowercase()) {
-        "pearl", "white", "light", "sunset", "coral", "rose" -> true
-        else -> false
-    }
-    return when (iconStyle.lowercase()) {
-        "lens", "search" -> if (isDark) R.drawable.ic_bubble_lens_dark else R.drawable.ic_bubble_lens
-        "glyph", "text", "compact" -> if (isDark) R.drawable.ic_bubble_glyph_dark else R.drawable.ic_bubble_glyph
-        "aperture", "ring", "dot" -> if (isDark) R.drawable.ic_bubble_aperture_dark else R.drawable.ic_bubble_aperture
-        else -> if (isDark) R.drawable.ic_bubble_translate_dark else R.drawable.ic_bubble_translate
+private fun getTranslationEngineName(id: String): String {
+    return when (id) {
+        "google_web" -> "Experimental Cloud (Web Fallback)"
+        "deepl" -> "DeepL API"
+        "llm" -> "On-Device / Cloud LLM"
+        else -> "Google ML Kit (On-Device, Offline)"
     }
 }
 
-// User Guide / Demo Dialog Placeholder
+private fun getOcrEngineName(id: String): String {
+    return when (id) {
+        "tesseract" -> "Tesseract OCR"
+        else -> "Google ML Kit Multi-script"
+    }
+}
+
+/**
+ * Clean User Guide Dialog.
+ */
 @Composable
 private fun DemoVideoGuideDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = DialogShape,
             color = SurfaceContainer,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, BorderSubtle),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                modifier = Modifier.padding(NexiqSpacing.xl),
+                verticalArrangement = Arrangement.spacedBy(NexiqSpacing.md)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.md)
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = BrandPrimaryMuted,
+                        color = BrandPrimaryContainer,
                         modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.PlayCircleOutline, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(20.dp))
                         }
                     }
                     Column {
-                        Text("How NEXIQ Works", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text("How NEXIQ Works", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                         Text("30-Second Quick Walkthrough", style = MaterialTheme.typography.bodySmall, color = TextSecondary, fontSize = 11.sp)
                     }
                 }
 
-                // Video Player Simulated Frame
+                // Simulated Preview Screen
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF0F172A),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderMedium),
+                    shape = ContainerShape,
+                    color = Color(0xFF070B12),
+                    border = BorderStroke(1.dp, BorderSubtle),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp)
+                        .height(140.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(NexiqSpacing.xs)
                         ) {
                             Icon(
                                 Icons.Default.PlayArrow,
                                 contentDescription = "Play Video",
-                                tint = BrandPrimaryLighter,
-                                modifier = Modifier.size(48.dp)
+                                tint = BrandPrimary,
+                                modifier = Modifier.size(40.dp)
                             )
                             Text(
-                                text = "Demo video will load here",
+                                text = "Screen Translation Walkthrough",
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                fontSize = 11.sp
                             )
                         }
                     }
                 }
 
-                // 3-step guide steps
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GuideStepRow("1", "Tap the Floating Bubble", "Keep the bubble on screen perimeter to trigger instant translation anytime.")
-                    GuideStepRow("2", "Automatic In-Place Translation", "Foreign text is recognized via ML Kit and replaced cleanly in-place.")
-                    GuideStepRow("3", "Crop & Save Controls", "Use the Scissors tool to crop specific areas or save the translated screenshot.")
+                Column(verticalArrangement = Arrangement.spacedBy(NexiqSpacing.sm)) {
+                    GuideStepRow("1", "Tap Floating Bubble", "Keep the bubble on your screen edge to trigger instant captures.")
+                    GuideStepRow("2", "In-Place Overlay", "Recognized text is replaced directly on top of the original layout.")
+                    GuideStepRow("3", "Focus & Crop", "Use the Scissors tool to crop specific areas or save the composite image.")
                 }
 
                 Button(
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = ControlShape,
                     colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Got It", fontWeight = FontWeight.SemiBold)
+                    Text("Got It", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -1256,26 +856,28 @@ private fun DemoVideoGuideDialog(
 @Composable
 private fun GuideStepRow(step: String, title: String, description: String) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.md),
         verticalAlignment = Alignment.Top
     ) {
-        Surface(
-            shape = CircleShape,
-            color = BrandPrimaryMuted,
-            modifier = Modifier.size(22.dp)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(BrandPrimaryContainer)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(step, color = BrandPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
+            Text(step, color = BrandPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
         Column {
-            Text(title, style = MaterialTheme.typography.labelMedium, color = TextPrimary, fontSize = 13.sp)
+            Text(title, style = MaterialTheme.typography.titleSmall, color = TextPrimary, fontSize = 13.sp)
             Text(description, style = MaterialTheme.typography.bodySmall, color = TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
         }
     }
 }
 
-// First-Launch Onboarding & Transparent Privacy Disclosure Dialog
+/**
+ * Onboarding / Welcome Dialog: Clear, honest, scannable in seconds.
+ */
 @Composable
 private fun OnboardingPrivacyDialog(
     onAccept: () -> Unit,
@@ -1285,185 +887,153 @@ private fun OnboardingPrivacyDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = DialogShape,
             color = SurfaceContainer,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, BorderSubtle),
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.padding(NexiqSpacing.xl),
+                verticalArrangement = Arrangement.spacedBy(NexiqSpacing.lg)
             ) {
-                // Header & Brand
+                // Brand Header
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = BrandPrimary,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                        modifier = Modifier.size(56.dp)
+                        shape = ContainerShape,
+                        color = SurfaceElevated,
+                        border = BorderStroke(1.dp, BorderSubtle),
+                        modifier = Modifier.size(52.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Image(
                                 painter = painterResource(R.drawable.ic_bubble_translate),
-                                contentDescription = "NEXIQ Brand Symbol",
-                                modifier = Modifier.size(40.dp)
+                                contentDescription = "NEXIQ Viewframe Logo",
+                                modifier = Modifier.size(34.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(NexiqSpacing.md))
                     Text(
-                        text = "Translate what's on your screen.",
+                        text = "Translate what's on your screen",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(NexiqSpacing.xs))
                     Text(
-                        text = "Instantly recognize and translate visible text without leaving the app you're using.",
+                        text = "Recognize and translate visible text in-place without switching apps.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary,
                         textAlign = TextAlign.Center,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "NEXIQ recognizes text directly from your screen and places the translation back where the original text appears — without interrupting what you are doing.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary.copy(alpha = 0.85f),
-                        textAlign = TextAlign.Center,
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
                 }
 
-                HorizontalDivider(color = BorderSubtle)
+                NexiqDivider()
 
-                // HOW IT WORKS
-                Text(
-                    text = "HOW IT WORKS",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TextSecondary,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.sp
-                )
-
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Key Features (Typographic hierarchy, not cards)
+                Column(verticalArrangement = Arrangement.spacedBy(NexiqSpacing.md)) {
                     FeatureHighlightRow(
                         icon = Icons.Outlined.FitScreen,
-                        title = "Screen Translation",
-                        description = "Capture and translate visible text while you continue using your phone."
+                        title = "In-Place Overlay",
+                        description = "Translations render directly over the original coordinates on your screen."
                     )
                     FeatureHighlightRow(
                         icon = Icons.Outlined.Memory,
                         title = "On-Device Intelligence",
-                        description = "NEXIQ uses on-device ML Kit OCR and translation when available, keeping recognized content on your device for that processing path."
+                        description = "ML Kit OCR processes recognized text locally on your device."
                     )
                 }
 
-                // YOUR PRIVACY, CLEARLY EXPLAINED (Honest, implementation-backed)
+                // Privacy Disclosure Summary (Calm, technical)
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = SurfaceCardSubtle,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                    shape = ControlShape,
+                    color = SurfaceElevated,
+                    border = BorderStroke(1.dp, BorderSubtle),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(NexiqSpacing.md),
+                        verticalArrangement = Arrangement.spacedBy(NexiqSpacing.xs)
                     ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.sm),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 Icons.Outlined.Security,
                                 contentDescription = null,
                                 tint = BrandPrimary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Your privacy, clearly explained",
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary,
-                                fontSize = 13.sp
+                                fontSize = 12.sp
                             )
                         }
                         Text(
-                            text = "Screen content is processed in memory for translation sessions. Optional cloud translation may send recognized text to the selected translation provider. Images are only saved to shared storage when you explicitly choose to save them.",
+                            text = "Screen content exists in transient memory only during active translation sessions. No background tracking or profile collection. Optional cloud engine sends text over HTTPS only when explicitly enabled.",
                             color = TextSecondary,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp
-                        )
-                        Text(
-                            text = "No hidden collection: NEXIQ does not intentionally collect advertising profiles or sell your screen content.",
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Medium,
                             fontSize = 11.sp,
                             lineHeight = 15.sp
                         )
                     }
                 }
 
-                // TRANSPARENCY & GITHUB LINK
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Review the source code and project documentation on GitHub.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sang2k10/NEXIQ")).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            try {
-                                context.startActivity(intent)
-                            } catch (_: Exception) {}
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                        contentPadding = PaddingValues(vertical = 10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            Icons.Outlined.Code,
-                            contentDescription = "View NEXIQ source code on GitHub",
-                            tint = BrandPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "View source on GitHub",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-
-                // PRIMARY ACTION
-                Button(
-                    onClick = onAccept,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
-                    contentPadding = PaddingValues(vertical = 12.dp),
+                // GitHub Source Link
+                OutlinedButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sang2k10/NEXIQ")).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (_: Exception) {}
+                    },
+                    shape = ControlShape,
+                    border = BorderStroke(1.dp, BorderSubtle),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                    contentPadding = PaddingValues(vertical = NexiqSpacing.sm),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Get Started", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Icon(
+                        Icons.Outlined.Code,
+                        contentDescription = null,
+                        tint = TextTertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(NexiqSpacing.sm))
+                    Text(
+                        text = "View source code on GitHub",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Primary CTA
+                Button(
+                    onClick = onAccept,
+                    shape = ControlShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+                    contentPadding = PaddingValues(vertical = NexiqSpacing.md),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Get Started",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = Color.White
+                    )
                 }
             }
         }
@@ -1473,25 +1043,29 @@ private fun OnboardingPrivacyDialog(
 @Composable
 private fun FeatureHighlightRow(icon: ImageVector, title: String, description: String) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(NexiqSpacing.md),
         verticalAlignment = Alignment.Top
     ) {
-        Surface(
-            shape = CircleShape,
-            color = BrandPrimaryMuted,
-            modifier = Modifier.size(32.dp)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(BrandPrimaryContainer)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(18.dp))
-            }
+            Icon(icon, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(18.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.labelMedium, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            Text(title, style = MaterialTheme.typography.titleSmall, color = TextPrimary, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(NexiqSpacing.xxs))
             Text(description, style = MaterialTheme.typography.bodySmall, color = TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
         }
     }
 }
 
+/**
+ * Language Selection Modal.
+ */
 @Composable
 private fun LanguageSelectionDialog(
     title: String,
@@ -1502,36 +1076,36 @@ private fun LanguageSelectionDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(18.dp),
+            shape = DialogShape,
             color = SurfaceContainer,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, BorderSubtle),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 480.dp)
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(modifier = Modifier.padding(NexiqSpacing.lg)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = BorderSubtle)
+                Spacer(modifier = Modifier.height(NexiqSpacing.sm))
+                NexiqDivider()
 
                 LazyColumn(
                     modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(NexiqSpacing.xxs)
                 ) {
                     items(languages) { lang ->
                         val isSelected = lang.code == currentLanguage.code
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) BrandPrimaryMuted else Color.Transparent)
+                                .clip(ControlShape)
+                                .background(if (isSelected) BrandPrimaryContainer else Color.Transparent)
                                 .clickable { onSelect(lang) }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = NexiqSpacing.md, vertical = NexiqSpacing.md),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -1548,7 +1122,7 @@ private fun LanguageSelectionDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(NexiqSpacing.sm))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel", color = TextSecondary)
@@ -1559,6 +1133,9 @@ private fun LanguageSelectionDialog(
     }
 }
 
+/**
+ * Engine Selection Modal.
+ */
 @Composable
 private fun EngineSelectionDialog(
     title: String,
@@ -1569,34 +1146,34 @@ private fun EngineSelectionDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(18.dp),
+            shape = DialogShape,
             color = SurfaceContainer,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+            border = BorderStroke(1.dp, BorderSubtle),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(modifier = Modifier.padding(NexiqSpacing.lg)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = BorderSubtle)
+                Spacer(modifier = Modifier.height(NexiqSpacing.sm))
+                NexiqDivider()
 
                 Column(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.padding(vertical = NexiqSpacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(NexiqSpacing.xs)
                 ) {
                     options.forEach { (id, label) ->
                         val isSelected = id == selectedId
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) BrandPrimaryMuted else Color.Transparent)
+                                .clip(ControlShape)
+                                .background(if (isSelected) BrandPrimaryContainer else Color.Transparent)
                                 .clickable { onSelect(id) }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = NexiqSpacing.md, vertical = NexiqSpacing.md),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -1614,7 +1191,7 @@ private fun EngineSelectionDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(NexiqSpacing.sm))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel", color = TextSecondary)
@@ -1622,21 +1199,5 @@ private fun EngineSelectionDialog(
                 }
             }
         }
-    }
-}
-
-private fun getTranslationEngineName(id: String): String {
-    return when (id) {
-        "google_web" -> "Experimental Cloud (Web Fallback)"
-        "deepl" -> "DeepL API"
-        "llm" -> "On-Device / Cloud LLM"
-        else -> "Google ML Kit (On-Device, Offline)"
-    }
-}
-
-private fun getOcrEngineName(id: String): String {
-    return when (id) {
-        "tesseract" -> "Tesseract OCR"
-        else -> "Google ML Kit Multi-script"
     }
 }

@@ -122,11 +122,12 @@ fun OverlayTopBar(
                         }
                     }
 
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "Translates to",
-                        tint = BrandPrimaryLighter,
-                        modifier = Modifier.size(13.dp)
+                    Text(
+                        text = "→",
+                        color = BrandPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 2.dp)
                     )
 
                     // Target Language Picker
