@@ -100,18 +100,9 @@ class OverlayManager(
                         onToggleCropMode = {
                             sessionRepo.updateSession { it.copy(isCropMode = !it.isCropMode) }
                         },
-                        onConfirmCrop = { normRect ->
+                        onConfirmCrop = { pixelRect ->
                             scope.launch {
-                                val currentSession = sessionRepo.activeSession.value ?: return@launch
-                                val bmp = currentSession.originalBitmap ?: return@launch
-                                val pixelRect = com.screentranslator.domain.model.CropRect(
-                                    left = normRect.left * bmp.width,
-                                    top = normRect.top * bmp.height,
-                                    right = normRect.right * bmp.width,
-                                    bottom = normRect.bottom * bmp.height
-                                )
-                                val container = ScreenTranslatorApp.instance.container
-                                container.retranslateCropUseCase(pixelRect)
+                                ScreenTranslatorApp.instance.container.retranslateCropUseCase(pixelRect)
                             }
                         },
                         onDismissError = {
@@ -143,6 +134,14 @@ class OverlayManager(
             lifecycleOwner = null
         }
         ScreenTranslatorApp.instance.container.sessionRepository.endSession()
+
+        // Deterministically stop foreground capture service and clear ongoing notification
+        try {
+            val stopIntent = android.content.Intent(context, com.screentranslator.service.ScreenCaptureService::class.java).apply {
+                action = com.screentranslator.service.ScreenCaptureService.ACTION_STOP
+            }
+            context.startService(stopIntent)
+        } catch (_: Exception) {}
 
         // Restore floating bubble if user has it enabled
         scope.launch {

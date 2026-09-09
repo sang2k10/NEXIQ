@@ -27,6 +27,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -75,6 +78,7 @@ fun SettingsScreen(
     var showRestrictedHelp by remember { mutableStateOf(false) }
     var showVideoGuideDialog by remember { mutableStateOf(false) }
     var showOnboardingDialog by remember { mutableStateOf(false) }
+    var showCloudConfirmationDialog by remember { mutableStateOf(false) }
 
     // Trigger onboarding on first launch
     LaunchedEffect(settings.hasAcceptedOnboarding) {
@@ -718,9 +722,9 @@ fun SettingsScreen(
                             }
                         }
                         Column {
-                            Text("Zero Data Collection Guarantee", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                            Text("Private by Design & Transparent Processing", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                             Text(
-                                text = "Temporary screenshots exist in private RAM only and are wiped upon session close.",
+                                text = "Screen content is processed in transient memory during translation sessions. No background tracking, profiling, or telemetry.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextSecondary,
                                 fontSize = 12.sp
@@ -730,7 +734,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = BorderSubtle)
 
-                    // Button to review welcome guide & privacy guarantee anytime
+                    // Button to review welcome guide & privacy disclosures anytime
                     OutlinedButton(
                         onClick = { showOnboardingDialog = true },
                         shape = RoundedCornerShape(10.dp),
@@ -742,7 +746,7 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Outlined.Security, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Review Privacy Guarantee & Features", fontSize = 13.sp)
+                        Text("Review Privacy Disclosures & Guide", fontSize = 13.sp)
                     }
 
                     HorizontalDivider(color = BorderSubtle)
@@ -830,7 +834,7 @@ fun SettingsScreen(
         val options = if (isTranslation) {
             listOf(
                 "mlkit" to "Google ML Kit (On-Device, Offline)",
-                "google_web" to "Google Translate (Cloud)",
+                "google_web" to "Experimental Cloud (Web Fallback)",
                 "deepl" to "DeepL API (Planned)",
                 "llm" to "On-Device / Cloud LLM (Planned)"
             )
@@ -846,10 +850,58 @@ fun SettingsScreen(
             selectedId = selectedId,
             options = options,
             onSelect = { id ->
-                if (isTranslation) onUpdateTranslationEngine(id) else onUpdateOcrEngine(id)
+                if (isTranslation) {
+                    if (id == "google_web") {
+                        showCloudConfirmationDialog = true
+                    } else {
+                        onUpdateTranslationEngine(id)
+                    }
+                } else {
+                    onUpdateOcrEngine(id)
+                }
                 enginePickerTarget = null
             },
             onDismiss = { enginePickerTarget = null }
+        )
+    }
+
+    if (showCloudConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showCloudConfirmationDialog = false },
+            title = {
+                Text("Enable Cloud Translation?", fontWeight = FontWeight.Bold, color = TextPrimary)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Selecting Experimental Cloud Translation sends extracted text over HTTPS to Google Translate web servers.",
+                        color = TextPrimary,
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "While no images, user identifiers, or advertising profiles are transmitted, this sends text off your device. Use on-device ML Kit if you require 100% offline privacy.",
+                        color = TextSecondary,
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onUpdateTranslationEngine("google_web")
+                        showCloudConfirmationDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+                ) {
+                    Text("Enable Cloud")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCloudConfirmationDialog = false }) {
+                    Text("Keep On-Device", color = TextSecondary)
+                }
+            },
+            containerColor = SurfaceContainer
         )
     }
 }
@@ -1223,15 +1275,17 @@ private fun GuideStepRow(step: String, title: String, description: String) {
     }
 }
 
-// First-Launch Onboarding & Privacy Guarantee Dialog
+// First-Launch Onboarding & Transparent Privacy Disclosure Dialog
 @Composable
 private fun OnboardingPrivacyDialog(
     onAccept: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(20.dp),
             color = SurfaceContainer,
             border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
             modifier = Modifier
@@ -1239,10 +1293,10 @@ private fun OnboardingPrivacyDialog(
                 .verticalScroll(rememberScrollState())
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
+                modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header
+                // Header & Brand
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -1251,89 +1305,157 @@ private fun OnboardingPrivacyDialog(
                         shape = RoundedCornerShape(16.dp),
                         color = BrandPrimary,
                         border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                        modifier = Modifier.size(62.dp)
+                        modifier = Modifier.size(56.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Image(
                                 painter = painterResource(R.drawable.ic_bubble_translate),
-                                contentDescription = "NEXIQ",
-                                modifier = Modifier.size(46.dp)
+                                contentDescription = "NEXIQ Brand Symbol",
+                                modifier = Modifier.size(40.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Welcome to NEXIQ",
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = "Translate what's on your screen.",
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Understand what's on your screen.",
+                        text = "Instantly recognize and translate visible text without leaving the app you're using.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = BrandPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "NEXIQ recognizes text directly from your screen and places the translation back where the original text appears — without interrupting what you are doing.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary.copy(alpha = 0.85f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
                     )
                 }
 
                 HorizontalDivider(color = BorderSubtle)
 
-                // Key Features
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // HOW IT WORKS
+                Text(
+                    text = "HOW IT WORKS",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextSecondary,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     FeatureHighlightRow(
-                        icon = Icons.Outlined.Translate,
-                        title = "In-Place Screen Translation",
-                        description = "Translate foreign text directly where it appears in social feeds, videos, and apps without switching windows."
+                        icon = Icons.Outlined.FitScreen,
+                        title = "Screen Translation",
+                        description = "Capture and translate visible text while you continue using your phone."
                     )
                     FeatureHighlightRow(
-                        icon = Icons.Outlined.Speed,
-                        title = "On-Device ML Kit Intelligence",
-                        description = "Instant multi-script text recognition (Latin, Japanese, Chinese, Korean) that works offline."
-                    )
-                    FeatureHighlightRow(
-                        icon = Icons.Outlined.TouchApp,
-                        title = "Convenient Floating Shortcut",
-                        description = "Single-tap trigger on the perimeter of your screen, always available when you need it."
+                        icon = Icons.Outlined.Memory,
+                        title = "On-Device Intelligence",
+                        description = "NEXIQ uses on-device ML Kit OCR and translation when available, keeping recognized content on your device for that processing path."
                     )
                 }
 
-                // Explicit Zero Data Collection Guarantee
+                // YOUR PRIVACY, CLEARLY EXPLAINED (Honest, implementation-backed)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = SuccessGreenContainer,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.4f)),
+                    color = SurfaceCardSubtle,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.Top
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Security,
-                            contentDescription = null,
-                            tint = SuccessGreen,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.Security,
+                                contentDescription = null,
+                                tint = BrandPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
                             Text(
-                                text = "Zero Data Collection Guarantee",
+                                text = "Your privacy, clearly explained",
                                 fontWeight = FontWeight.Bold,
-                                color = SuccessGreen,
+                                color = TextPrimary,
                                 fontSize = 13.sp
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "NEXIQ is built privacy-first. Screen captures and translated text exist strictly in private device RAM and are wiped immediately when the session ends. No user information, photos, or data are ever collected, tracked, or sent to remote servers.",
-                                color = TextPrimary,
-                                fontSize = 11.sp,
-                                lineHeight = 16.sp
-                            )
                         }
+                        Text(
+                            text = "Screen content is processed in memory for translation sessions. Optional cloud translation may send recognized text to the selected translation provider. Images are only saved to shared storage when you explicitly choose to save them.",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                        Text(
+                            text = "No hidden collection: NEXIQ does not intentionally collect advertising profiles or sell your screen content.",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp
+                        )
                     }
                 }
 
+                // TRANSPARENCY & GITHUB LINK
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Review the source code and project documentation on GitHub.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sang2k10/NEXIQ")).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                        contentPadding = PaddingValues(vertical = 10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            Icons.Outlined.Code,
+                            contentDescription = "View NEXIQ source code on GitHub",
+                            tint = BrandPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "View source on GitHub",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                // PRIMARY ACTION
                 Button(
                     onClick = onAccept,
                     shape = RoundedCornerShape(12.dp),
@@ -1341,7 +1463,7 @@ private fun OnboardingPrivacyDialog(
                     contentPadding = PaddingValues(vertical = 12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Get Started & Accept", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Get Started", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
         }
@@ -1505,7 +1627,7 @@ private fun EngineSelectionDialog(
 
 private fun getTranslationEngineName(id: String): String {
     return when (id) {
-        "google_web" -> "Google Translate (Cloud)"
+        "google_web" -> "Experimental Cloud (Web Fallback)"
         "deepl" -> "DeepL API"
         "llm" -> "On-Device / Cloud LLM"
         else -> "Google ML Kit (On-Device, Offline)"

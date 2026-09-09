@@ -11,15 +11,22 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import com.screentranslator.ScreenTranslatorApp
+import com.screentranslator.core.util.TranslationSessionCoordinator
 import com.screentranslator.service.ScreenCaptureService
+import com.screentranslator.service.ScreenTranslatorAccessibilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Transparent bridge activity to acquire MediaProjection user consent.
+ * Transparent bridge activity to acquire MediaProjection user consent or trigger Accessibility capture.
  */
 class CapturePermissionActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_USE_ACCESSIBILITY = "extra_use_accessibility"
+    }
 
     private var captureStarted = false
 
@@ -63,6 +70,23 @@ class CapturePermissionActivity : ComponentActivity() {
         try {
             ScreenTranslatorApp.instance.container.floatingBubbleManager.hideBubble()
         } catch (_: Exception) {}
+
+        val useAccessibility = intent.getBooleanExtra(EXTRA_USE_ACCESSIBILITY, false)
+        if (useAccessibility && ScreenTranslatorAccessibilityService.isRunning()) {
+            captureStarted = true
+            pauseBackgroundMedia()
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(250L) // Wait for shade collapse animation to finish
+                val captureResult = ScreenTranslatorAccessibilityService.captureScreenshot()
+                captureResult.onSuccess { bitmap ->
+                    TranslationSessionCoordinator.startSession(bitmap, this@CapturePermissionActivity)
+                }.onFailure {
+                    restoreBubbleIfNeeded()
+                }
+                finish()
+            }
+            return
+        }
 
         val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         captureLauncher.launch(projectionManager.createScreenCaptureIntent())

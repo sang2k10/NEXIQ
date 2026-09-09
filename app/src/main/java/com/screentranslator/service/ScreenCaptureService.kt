@@ -164,6 +164,17 @@ class ScreenCaptureService : Service() {
         } catch (_: Exception) {}
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        try {
+            val container = ScreenTranslatorApp.instance.container
+            container.sessionRepository.endSession()
+            container.screenCaptureManager.stopProjection()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        } catch (_: Exception) {}
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {

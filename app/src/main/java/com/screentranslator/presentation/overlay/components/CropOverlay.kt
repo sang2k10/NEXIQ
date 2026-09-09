@@ -34,7 +34,7 @@ private enum class DragHandle {
 
 @Composable
 fun CropOverlay(
-    onConfirmCrop: (CropRect) -> Unit,
+    onConfirmCrop: (CropRect, Float, Float) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -253,7 +253,9 @@ fun CropOverlay(
                                 top = topNorm,
                                 right = rightNorm,
                                 bottom = bottomNorm
-                            )
+                            ),
+                            totalWidth,
+                            totalHeight
                         )
                     },
                     colors = ButtonDefaults.buttonColors(

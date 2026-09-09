@@ -61,8 +61,23 @@ fun SessionOverlayScreen(
 
         // Interactive Crop Overlay when in Crop Mode
         if (session.isCropMode) {
+            val bmp = session.workingBitmap ?: session.originalBitmap
             com.screentranslator.presentation.overlay.components.CropOverlay(
-                onConfirmCrop = onConfirmCrop,
+                onConfirmCrop = { normRect, canvasWidth, canvasHeight ->
+                    if (bmp != null) {
+                        val pixelCropRect = com.screentranslator.presentation.overlay.matrix.CoordinateTransformer.mapNormalizedCropToImage(
+                            normCrop = normRect,
+                            canvasWidth = canvasWidth,
+                            canvasHeight = canvasHeight,
+                            imageWidth = bmp.width.toFloat(),
+                            imageHeight = bmp.height.toFloat(),
+                            transformState = transformState
+                        )
+                        onConfirmCrop(pixelCropRect)
+                    } else {
+                        onConfirmCrop(normRect)
+                    }
+                },
                 onCancel = onToggleCropMode
             )
         }

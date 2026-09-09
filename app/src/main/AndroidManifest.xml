@@ -58,7 +58,7 @@
             </intent-filter>
         </service>
 
-        <!-- Accessibility Service for Instant Static Screenshots (Zero Recording Prompts) -->
+        <!-- Optional Accessibility Service for Assisted Static Screen Capture (Android 11+ takeScreenshot API) -->
         <service
             android:name=".service.ScreenTranslatorAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

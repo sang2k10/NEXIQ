@@ -12,5 +12,5 @@
     <string name="overlay_permission_message">NEXIQ requires permission to display over other apps to show translated text directly on top of your screen.</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="cancel">Cancel</string>
-    <string name="accessibility_service_description">Allows NEXIQ to capture clean screenshots instantly without repeated recording prompts or window focus changes.</string>
+    <string name="accessibility_service_description">Allows NEXIQ to perform on-demand screen capture for translation upon user request using Android\'s native screenshot capability.</string>
 </resources>
